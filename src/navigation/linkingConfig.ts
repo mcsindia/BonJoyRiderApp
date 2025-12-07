@@ -9,7 +9,7 @@ const linking: LinkingOptions<RootStackParamList> = {
       Onboarding: 'onboarding',
       Login: 'login',
       Home: 'home',
-      EmergencyContacts: 'emergencycontacts'
+      EmergencyContacts: 'EmergencyContacts'
     },
   },
 };
