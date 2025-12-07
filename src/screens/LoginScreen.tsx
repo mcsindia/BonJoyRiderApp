@@ -1,3 +1,4 @@
+// src/screens/MobileVerificationScreen.tsx
 import React, { useState, useCallback, useRef } from 'react';
 import {
   View,
@@ -10,8 +11,7 @@ import {
   ScrollView,
   Modal,
 } from 'react-native';
-import {fontFamilies} from '../constants/fonts'
-
+import CountryPicker from 'react-native-country-picker-modal';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
@@ -26,13 +26,14 @@ const MobileVerificationScreen = () => {
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const [showOtpDialog, setShowOtpDialog] = useState(false);
-  const navigation = useNavigation<NavProp>();
+  const [countryCode, setCountryCode] = useState('IN'); // Default: India
+  const [callingCode, setCallingCode] = useState('91');
+  const [pickerVisible, setPickerVisible] = useState(false);
 
+  const navigation = useNavigation<NavProp>();
   const otpRefs = useRef<TextInput[]>([]);
 
-  const callingCode = '91';
-
-  // ✅ Only allow digits for phone
+  // Only allow digits
   const handlePhoneChange = (text: string) => {
     const cleaned = text.replace(/[^0-9]/g, '');
     if (cleaned.length <= 10) {
@@ -47,13 +48,11 @@ const MobileVerificationScreen = () => {
   }, [phone]);
 
   const onOtpChange = (value: string, index: number) => {
-    // Only allow digits
     const digit = value.replace(/[^0-9]/g, '').slice(0, 1);
     const newOtp = [...otp];
     newOtp[index] = digit;
     setOtp(newOtp);
 
-    // Move to next if digit entered
     if (digit && index < OTP_LENGTH - 1) {
       otpRefs.current[index + 1]?.focus();
     }
@@ -61,7 +60,6 @@ const MobileVerificationScreen = () => {
 
   const onOtpKeyPress = (key: string, index: number) => {
     if (key === 'Backspace' && !otp[index] && index > 0) {
-      // Go to previous box if current is empty and backspace pressed
       otpRefs.current[index - 1]?.focus();
     }
   };
@@ -72,6 +70,12 @@ const MobileVerificationScreen = () => {
     if (isOtpComplete) {
       navigation.navigate('Onboarding');
     }
+  };
+
+  const onSelectCountry = (country: any) => {
+    setCountryCode(country.cca2);
+    setCallingCode(country.callingCode[0] || '91');
+    setPickerVisible(false);
   };
 
   return (
@@ -95,26 +99,50 @@ const MobileVerificationScreen = () => {
           <View style={styles.card}>
             {step === 'PHONE' && (
               <>
-                <Text style={styles.title}>
-                  Enter Mobile number for verification
-                </Text>
+                <Text style={styles.title}>Enter Mobile number for verification</Text>
 
                 <Text style={styles.subtitle}>
-                  This number will be used for ride-related communication. You
+                  This number will be used for ride-related {'\n'}communication. You
                   will receive an SMS code for verification.
                 </Text>
 
+                {/* PHONE INPUT - WITH COUNTRY PICKER */}
                 <View style={styles.phoneInputContainer}>
-                  <Text style={styles.callingCode}>🇮🇳 +{callingCode}</Text>
-                  <TextInput
-                    value={phone}
-                    onChangeText={handlePhoneChange}
-                    keyboardType="number-pad"
-                    maxLength={10}
-                    placeholder="Mobile number"
-                    placeholderTextColor="#9CA3AF"
-                    style={styles.phoneInput}
-                  />
+                  <TouchableOpacity
+                    style={styles.countrySelector}
+                    onPress={() => setPickerVisible(true)}
+                  >
+                    <CountryPicker
+                      withFlag
+                      withEmoji
+                      countryCode={countryCode}
+                      withCallingCode={false}
+                      withFilter
+                      visible={pickerVisible}
+                      onSelect={onSelectCountry}
+                      onClose={() => setPickerVisible(false)}
+                      theme={{
+                        fontSize: 16,
+                        fontFamily: getFontFamily('regular'),
+                      }}
+                    />
+                    <Text style={styles.downArrow}>▼</Text>
+                  </TouchableOpacity>
+
+                  <View style={styles.divider} />
+
+                  <View style={styles.codeAndInput}>
+                    <Text style={styles.callingCode}>+{callingCode}</Text>
+                    <TextInput
+                      value={phone}
+                      onChangeText={handlePhoneChange}
+                      keyboardType="number-pad"
+                      maxLength={10}
+                      placeholder="Mobile number"
+                      placeholderTextColor="#9CA3AF"
+                      style={styles.phoneInput}
+                    />
+                  </View>
                 </View>
 
                 <TouchableOpacity
@@ -130,9 +158,8 @@ const MobileVerificationScreen = () => {
             {step === 'OTP' && (
               <>
                 <Text style={styles.title}>Log in using the OTP sent to</Text>
+                <Text style={styles.subtitle}>+{callingCode}******{phone.slice(-4)}</Text>
 
-                <Text style={styles.subtitle}>+91******{phone.slice(-4)}</Text>
-            
                 <View style={styles.otpRow}>
                   {otp.map((digit, index) => (
                     <TextInput
@@ -179,13 +206,11 @@ const MobileVerificationScreen = () => {
         />
       </View>
 
+      {/* OTP Resent Modal */}
       <Modal visible={showOtpDialog} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalText}>
-              OTP sent. It will reach you shortly
-            </Text>
-
+            <Text style={styles.modalText}>OTP sent. It will reach you shortly</Text>
             <TouchableOpacity
               style={styles.modalButton}
               onPress={() => setShowOtpDialog(false)}
@@ -203,11 +228,7 @@ export default MobileVerificationScreen;
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#FFF' },
-
-  scrollContent: {
-    paddingBottom: BOTTOM_IMAGE_HEIGHT + 40,
-  },
-
+  scrollContent: { paddingBottom: BOTTOM_IMAGE_HEIGHT + 40 },
   headerBg: {
     height: 280,
     backgroundColor: '#FFC533',
@@ -216,9 +237,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-
   scooterImg: { width: '78%', height: '78%' },
-
   card: {
     marginHorizontal: 20,
     marginTop: -80,
@@ -227,50 +246,69 @@ const styles = StyleSheet.create({
     padding: 24,
     elevation: 6,
   },
-
   title: {
     fontSize: 22,
     color: '#0F172A',
     marginBottom: 10,
-    fontFamily: getFontFamily( 'bold'),
+    fontFamily: getFontFamily('semiBold'),
   },
-
   subtitle: {
     fontSize: 16,
     color: '#6B7280',
     marginBottom: 24,
-    fontFamily: getFontFamily( 'regular'),
+    fontFamily: getFontFamily('regular'),
+    lineHeight: 22,
   },
-
   phoneInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     height: 60,
-    borderRadius: 12,
+    borderRadius: 30,
     borderWidth: 1.2,
-    borderColor: '#E2E8F0',
+    borderColor: '#D1D5DB',
     paddingHorizontal: 12,
     marginBottom: 24,
+    backgroundColor: '#F8FAFC',
   },
-
+  countrySelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+  },
+  downArrow: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginLeft: 4,
+  },
+  divider: {
+    width: 1,
+    height: 24,
+    backgroundColor: '#D1D5DB',
+    marginHorizontal: 12,
+  },
+  codeAndInput: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   callingCode: {
     fontSize: 16,
-    marginRight: 10,
-    fontFamily: getFontFamily( 'semiBold'),
+    fontWeight: '600',
+    color: '#0F172A',
+    marginRight: 8,
   },
-
   phoneInput: {
     flex: 1,
     fontSize: 18,
-    fontFamily: getFontFamily( 'regular'),
+    color: '#0F172A',
+    paddingVertical: 0,
+    fontFamily: getFontFamily('regular'),
   },
-
   otpRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 24,
   },
-
   otpBox: {
     width: 56,
     height: 56,
@@ -278,23 +316,20 @@ const styles = StyleSheet.create({
     borderWidth: 1.2,
     borderColor: '#D1D5DB',
     fontSize: 20,
-    fontFamily: getFontFamily( 'medium'),
+    textAlign: 'center',
+    fontFamily: getFontFamily('medium'),
   },
-
   resendRow: { flexDirection: 'row', marginBottom: 24 },
-
   resendText: {
     fontSize: 15,
     color: '#6B7280',
-    fontFamily: getFontFamily( 'regular'),
+    fontFamily: getFontFamily('regular'),
   },
-
   resendAction: {
     fontSize: 15,
     color: '#FBBF24',
-    fontFamily: getFontFamily( 'semiBold'),
+    fontFamily: getFontFamily('semiBold'),
   },
-
   button: {
     height: 56,
     backgroundColor: '#0F172A',
@@ -302,29 +337,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-
   buttonText: {
     fontSize: 18,
     color: '#FFF',
-    fontFamily: getFontFamily( 'semiBold'),
+    fontFamily: getFontFamily('semiBold'),
   },
-
   absoluteBottom: {
     position: 'absolute',
     bottom: 0,
     width: '100%',
     height: BOTTOM_IMAGE_HEIGHT,
   },
-
   bottomImage: { width: '100%', height: '100%' },
-
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.45)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-
   modalCard: {
     width: '82%',
     backgroundColor: '#FFF',
@@ -333,26 +363,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 8,
   },
-
   modalText: {
     fontSize: 18,
     color: '#4B5563',
     textAlign: 'center',
     marginBottom: 20,
     lineHeight: 24,
-    fontFamily: getFontFamily( 'regular'),
+    fontFamily: getFontFamily('regular'),
   },
-
   modalButton: {
     backgroundColor: '#1E293B',
     paddingHorizontal: 36,
     paddingVertical: 12,
     borderRadius: 24,
   },
-
   modalButtonText: {
     fontSize: 16,
     color: '#FFF',
-    fontFamily: getFontFamily( 'semiBold'),
+    fontFamily: getFontFamily('semiBold'),
   },
 });

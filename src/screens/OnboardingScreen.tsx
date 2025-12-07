@@ -73,7 +73,7 @@ const OnboardingScreen = () => {
       return;
     }
 
-    navigation.navigate('Home');
+    navigation.replace('Home');
   };
 
   const formatDate = (date: Date) =>
