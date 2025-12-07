@@ -1,6 +1,17 @@
 // src/screens/HomeScreenContent/DrawerContent.tsx
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+  Dimensions,
+} from 'react-native';
+
+import { getFontFamily } from '../../utils/fontFamily';
+
+const { width } = Dimensions.get('window');
 
 const DrawerContent = ({ navigation }: any) => {
   const closeAndNavigate = (screen: string) => {
@@ -12,23 +23,84 @@ const DrawerContent = ({ navigation }: any) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.profile}>
+      {/* YELLOW HEADER WITH PROFILE */}
+      <Image
+        source={require('../../assets/images/drawer_bg.png')} // 👈 YOUR PNG HERE
+        style={styles.headerBg}
+        resizeMode='stretch'
+      />
+      <View style={styles.profileSection}>
+      
         <Image
-          source={{ uri: 'https://via.placeholder.com/60' }}
+           source={require('../../assets/images/profile.png')}
           style={styles.avatar}
         />
-        <Text style={styles.name}>Sanjeev Kumar</Text>
-        <Text style={styles.email}>sanjeev@example.com</Text>
+        <View style={styles.profileInfo}>
+          <Text style={styles.name}>Sachin Parekh</Text>
+          <TouchableOpacity style={styles.viewProfileBtn}>
+            <Text style={styles.viewProfileText}>View Profile</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
-      <TouchableOpacity style={styles.item} onPress={() => closeAndNavigate('Home')}>
-        <Text style={styles.itemText}>🏠 Home</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.item} onPress={() => closeAndNavigate('Profile')}>
-        <Text style={styles.itemText}>👤 Profile</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.item} onPress={() => closeAndNavigate('Settings')}>
-        <Text style={styles.itemText}>⚙️ Settings</Text>
+      {/* MENU ITEMS */}
+      <View style={styles.menu}>
+        <TouchableOpacity style={styles.menuItem} onPress={() => closeAndNavigate('Dashboard')}>
+          <Image
+            source={require('../../assets/images/home_drawer.png')}
+            style={styles.icon}
+          />
+          <Text style={styles.menuText}>Dashboard</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.menuItem} onPress={() => closeAndNavigate('EmergencyContacts')}>
+          <Image
+            source={require('../../assets/images/contact_drawer.png')}
+            style={styles.icon}
+          />
+          <Text style={styles.menuText}>Emergency contacts</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.menuItem} onPress={() => closeAndNavigate('PersonalProfile')}>
+          <Image
+            source={require('../../assets/images/personal_account_drawer.png')}
+            style={styles.icon}
+          />
+          <Text style={styles.menuText}>Personal Profile</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.menuItem} onPress={() => closeAndNavigate('HelpSupport')}>
+          <Image
+            source={require('../../assets/images/support_drawer.png')}
+            style={styles.icon}
+          />
+          <Text style={styles.menuText}>Help / Support</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.menuItem} onPress={() => closeAndNavigate('SafetyPrivacy')}>
+          <Image
+            source={require('../../assets/images/safty_drawer.png')}
+            style={styles.icon}
+          />
+          <Text style={styles.menuText}>Safety & Privacy</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.menuItem} onPress={() => closeAndNavigate('About')}>
+          <Image
+            source={require('../../assets/images/about_drawer.png')}
+            style={styles.icon}
+          />
+          <Text style={styles.menuText}>About</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* SIGN OUT */}
+      <TouchableOpacity style={styles.signOut} onPress={() => navigation.closeDrawer()}>
+        <Image
+          source={require('../../assets/images/logout_drawer.png')}
+          style={styles.icon}
+        />
+        <Text style={styles.signOutText}>Sign out</Text>
       </TouchableOpacity>
     </View>
   );
@@ -39,33 +111,86 @@ export default DrawerContent;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 50,
-    paddingHorizontal: 20,
+    backgroundColor: '#FFFFFF',
+    paddingTop: 10
   },
-  profile: {
+  headerBg: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 150,
+    width: '100%'
+  },
+  profileSection: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 40,
+    margin: 20,
   },
   avatar: {
     width: 60,
     height: 60,
     borderRadius: 30,
-    marginBottom: 10,
+    marginRight: 12,
+  },
+  profileInfo: {
+    flex: 1,
   },
   name: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '700',
     color: '#0F172A',
+    fontFamily: getFontFamily('bold'),
   },
-  email: {
+  viewProfileBtn: {
+    backgroundColor: '#111827',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginTop: 8,
+    alignSelf: 'flex-start',
+  },
+  viewProfileText: {
+    color: '#FFFFFF',
     fontSize: 14,
-    color: '#6B7280',
+    fontWeight: '600',
+    fontFamily: getFontFamily('semiBold'),
   },
-  item: {
-    paddingVertical: 12,
+  menu: {
+    paddingTop: 16,
+    paddingBottom: 16,
+    paddingHorizontal: 20
   },
-  itemText: {
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+  },
+  icon: {
+    width: 24,
+    height: 24,
+    tintColor: '#1F2937',
+    marginRight: 16,
+  },
+  menuText: {
     fontSize: 16,
     color: '#1F2937',
+    fontFamily: getFontFamily('regular'),
+  },
+  signOut: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+    marginTop: 'auto',
+    marginStart: 20
+  },
+  signOutText: {
+    fontSize: 16,
+    color: '#1F2937',
+    fontFamily: getFontFamily('regular'),
   },
 });

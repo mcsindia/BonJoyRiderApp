@@ -8,6 +8,7 @@ import SplashScreen from '../screens/SplashScreen/SplashScreen';
 import LoginScreen from '../screens/LoginScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import HomeNavigator from './HomeNavigator';
+import EmergencyContacts from '../screens/HomeScreenContent/EmergencyContact';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -19,6 +20,7 @@ const RootNavigator = () => {
         <Stack.Screen name ='Login' component={LoginScreen} />
         <Stack.Screen name = 'Onboarding' component={OnboardingScreen} />
         <Stack.Screen name="Home" component={HomeNavigator} />
+        <Stack.Screen name= "EmergencyContacts" component = {EmergencyContacts} />
       </Stack.Navigator>
     </NavigationContainer>
   );
