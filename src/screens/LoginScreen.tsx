@@ -122,11 +122,12 @@ const MobileVerificationScreen = () => {
                       onSelect={onSelectCountry}
                       onClose={() => setPickerVisible(false)}
                       theme={{
-                        fontSize: 16,
                         fontFamily: getFontFamily('regular'),
                       }}
                     />
-                    <Text style={styles.downArrow}>▼</Text>
+                    <Image style={styles.downArrow}
+                    source={require('../assets/icons/down_arrow.png')}
+                    />
                   </TouchableOpacity>
 
                   <View style={styles.divider} />
@@ -158,7 +159,7 @@ const MobileVerificationScreen = () => {
             {step === 'OTP' && (
               <>
                 <Text style={styles.title}>Log in using the OTP sent to</Text>
-                <Text style={styles.subtitle}>+{callingCode}******{phone.slice(-4)}</Text>
+                <Text style={styles.title}>+{callingCode}******{phone.slice(-4)}</Text>
 
                 <View style={styles.otpRow}>
                   {otp.map((digit, index) => (
@@ -180,7 +181,7 @@ const MobileVerificationScreen = () => {
                 <View style={styles.resendRow}>
                   <Text style={styles.resendText}>Didn’t get the OTP?</Text>
                   <TouchableOpacity onPress={() => setShowOtpDialog(true)}>
-                    <Text style={styles.resendAction}> Resend again</Text>
+                    <Text style={styles.resendAction}>Resend again</Text>
                   </TouchableOpacity>
                 </View>
 
@@ -247,14 +248,14 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   title: {
-    fontSize: 22,
+    fontSize: 20,
     color: '#0F172A',
     marginBottom: 10,
     fontFamily: getFontFamily('semiBold'),
   },
   subtitle: {
-    fontSize: 16,
-    color: '#6B7280',
+    fontSize: 10,
+    color: '#AEAAAA',
     marginBottom: 24,
     fontFamily: getFontFamily('regular'),
     lineHeight: 22,
@@ -262,18 +263,17 @@ const styles = StyleSheet.create({
   phoneInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 60,
+    height: 50,
     borderRadius: 30,
     borderWidth: 1.2,
-    borderColor: '#D1D5DB',
-    paddingHorizontal: 12,
+    borderColor: '#B4CBFF',
     marginBottom: 24,
     backgroundColor: '#F8FAFC',
+    paddingStart: 10
   },
   countrySelector: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
+    alignItems: 'center'
   },
   downArrow: {
     fontSize: 14,
@@ -292,10 +292,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   callingCode: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '500',
     color: '#0F172A',
-    marginRight: 8,
+    fontFamily: getFontFamily('regular')
   },
   phoneInput: {
     flex: 1,
@@ -303,6 +303,7 @@ const styles = StyleSheet.create({
     color: '#0F172A',
     paddingVertical: 0,
     fontFamily: getFontFamily('regular'),
+    textAlignVertical: 'center'
   },
   otpRow: {
     flexDirection: 'row',
@@ -317,18 +318,17 @@ const styles = StyleSheet.create({
     borderColor: '#D1D5DB',
     fontSize: 20,
     textAlign: 'center',
-    fontFamily: getFontFamily('medium'),
+    fontFamily: getFontFamily('semiBold'),
   },
-  resendRow: { flexDirection: 'row', marginBottom: 24 },
+  resendRow: { flexDirection: 'row', marginBottom: 24, flex: 1, justifyContent: 'space-between' },
   resendText: {
     fontSize: 15,
-    color: '#6B7280',
-    fontFamily: getFontFamily('regular'),
+    color: '#6B7280'
   },
   resendAction: {
     fontSize: 15,
     color: '#FBBF24',
-    fontFamily: getFontFamily('semiBold'),
+    fontFamily: getFontFamily('semiBold')
   },
   button: {
     height: 56,

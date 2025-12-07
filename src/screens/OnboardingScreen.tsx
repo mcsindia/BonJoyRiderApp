@@ -7,24 +7,17 @@ import {
   StyleSheet,
   SafeAreaView,
   ScrollView,
-  Modal,
-  Alert,
-  Platform,
+  Image,
 } from 'react-native';
 
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/types';
+import { getFontFamily } from '../utils/fontFamily';
 
-type NavProp = NativeStackNavigationProp<RootStackParamList, 'Onboarding'>;
+const FIELD_HEIGHT = 44;
 
 const OnboardingScreen = () => {
-  const navigation = useNavigation<NavProp>();
-
   const [fullName, setFullName] = useState('');
   const [gender, setGender] = useState('');
-  const [dob, setDob] = useState<Date | null>(null);
+  const [dob, setDob] = useState('');
   const [email, setEmail] = useState('');
   const [mobile, setMobile] = useState('');
   const [stateVal, setStateVal] = useState('');
@@ -33,67 +26,27 @@ const OnboardingScreen = () => {
   const [permanentAddress, setPermanentAddress] = useState('');
   const [temporaryAddress, setTemporaryAddress] = useState('');
 
-  const [showDatePicker, setShowDatePicker] = useState(false);
-
-  const genders = ['Male', 'Female', 'Other'];
-  const states = ['Maharashtra', 'Karnataka', 'Tamil Nadu', 'Delhi', 'Uttar Pradesh'];
-
-  const citiesMap: Record<string, string[]> = {
-    Maharashtra: ['Mumbai', 'Pune', 'Nagpur'],
-    Karnataka: ['Bangalore', 'Mysore'],
-    'Tamil Nadu': ['Chennai', 'Coimbatore'],
-    Delhi: ['New Delhi'],
-    'Uttar Pradesh': ['Lucknow', 'Kanpur'],
+  const onPressMock = (label: string) => {
+    console.log(label, 'clicked');
   };
-
-  const showOptions = (title: string, options: string[], onSelect: (v: string) => void) => {
-    Alert.alert(
-      title,
-      '',
-      options.map(item => ({
-        text: item,
-        onPress: () => onSelect(item),
-      })),
-      { cancelable: true }
-    );
-  };
-
-  const handleSave = () => {
-    if (
-      !fullName ||
-      !gender ||
-      !dob ||
-      !mobile ||
-      !stateVal ||
-      !city ||
-      !pinCode ||
-      !permanentAddress
-    ) {
-      Alert.alert('Error', 'Please fill all mandatory fields');
-      return;
-    }
-
-    navigation.replace('Home');
-  };
-
-  const formatDate = (date: Date) =>
-    date.toLocaleDateString('en-IN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    });
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container}>
+        {/* HEADER IMAGE */}
+        <Image
+          source={require('../assets/images/profile_bg.png')}
+          style={styles.headerBg}
+        />
 
-        <Text style={styles.header}>Complete Your Profile</Text>
+        {/* HEADER TEXT ON IMAGE */}
+        <Text style={styles.headerText}>Complete Your Profile</Text>
 
-        <View style={styles.formCard}>
-
-          {/* Mandatory label */}
+        {/* CARD */}
+        <View style={styles.card}>
+          {/* Mandatory Row */}
           <View style={styles.mandatoryRow}>
-            <View style={styles.mandatoryDot} />
+            <View style={styles.dot} />
             <Text style={styles.mandatoryText}>mandatory</Text>
           </View>
 
@@ -104,53 +57,56 @@ const OnboardingScreen = () => {
               placeholder="Full Name"
               value={fullName}
               onChangeText={setFullName}
-              placeholderTextColor="#6B7280"
+              placeholderTextColor="#9CA3AF"
             />
-            <View style={styles.requiredBar} />
           </View>
 
           {/* Gender */}
           <TouchableOpacity
-            style={styles.requiredWrapper}
-            onPress={() => showOptions('Gender', genders, setGender)}
+            style={styles.commonWrapper}
+            onPress={() => onPressMock('Gender')}
+            activeOpacity={0.7}
           >
             <View style={styles.dropdown}>
-              <Text style={[styles.dropdownText, !gender && styles.placeholder]}>
+              <Text style={[styles.valueText, !gender && styles.placeholder]}>
                 {gender || 'Gender'}
               </Text>
-              <Text style={styles.icon}>⌄</Text>
+              <Image source={require('../assets/icons/down_arrow.png')} />
             </View>
-            <View style={styles.requiredBar} />
           </TouchableOpacity>
 
           {/* DOB */}
           <TouchableOpacity
-            style={styles.requiredWrapper}
-            onPress={() => setShowDatePicker(true)}
+            style={styles.commonWrapper}
+            onPress={() => onPressMock('DOB')}
+            activeOpacity={0.7}
           >
             <View style={styles.dropdown}>
-              <Text style={[styles.dropdownText, !dob && styles.placeholder]}>
-                {dob ? formatDate(dob) : 'Date Of Birth'}
+              <Text style={[styles.valueText, !dob && styles.placeholder]}>
+                {dob || 'Date Of Birth'}
               </Text>
-              <Text style={styles.icon}>📅</Text>
+              <Image source={require('../assets/icons/calendar.png')} />
             </View>
-            <View style={styles.requiredBar} />
           </TouchableOpacity>
 
           {/* Email */}
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            placeholderTextColor="#6B7280"
-          />
+          <View style={styles.commonWrapper}>
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              value={email}
+              onChangeText={setEmail}
+              placeholderTextColor="#9CA3AF"
+            />
+          </View>
 
           {/* Mobile */}
           <View style={styles.requiredWrapper}>
-            <View style={styles.mobileContainer}>
-              <Text style={styles.flag}>🇮🇳</Text>
+            <View style={styles.mobileRow}>
+              <Image
+                source={require('../assets/icons/india_flag.png')}
+                style={styles.flag}
+              />
               <Text style={styles.code}>+91</Text>
               <TextInput
                 style={styles.mobileInput}
@@ -158,214 +114,248 @@ const OnboardingScreen = () => {
                 value={mobile}
                 onChangeText={setMobile}
                 keyboardType="number-pad"
-                maxLength={10}
-                placeholderTextColor="#6B7280"
+                placeholderTextColor="#9CA3AF"
               />
             </View>
-            <View style={styles.requiredBar} />
           </View>
 
           {/* State */}
           <TouchableOpacity
             style={styles.requiredWrapper}
-            onPress={() => showOptions('State', states, setStateVal)}
+            onPress={() => onPressMock('State')}
+            activeOpacity={0.7}
           >
             <View style={styles.dropdown}>
-              <Text style={[styles.dropdownText, !stateVal && styles.placeholder]}>
+              <Text style={[styles.valueText, !stateVal && styles.placeholder]}>
                 {stateVal || 'State'}
               </Text>
-              <Text style={styles.icon}>⌄</Text>
+              <Image source={require('../assets/icons/down_arrow.png')} />
             </View>
-            <View style={styles.requiredBar} />
           </TouchableOpacity>
 
           {/* City */}
           <TouchableOpacity
             style={styles.requiredWrapper}
-            onPress={() => {
-              if (!stateVal) {
-                Alert.alert('Info', 'Please select state first');
-                return;
-              }
-              showOptions('City', citiesMap[stateVal] || [], setCity);
-            }}
+            onPress={() => onPressMock('City')}
+            activeOpacity={0.7}
           >
             <View style={styles.dropdown}>
-              <Text style={[styles.dropdownText, !city && styles.placeholder]}>
+              <Text style={[styles.valueText, !city && styles.placeholder]}>
                 {city || 'City'}
               </Text>
-              <Text style={styles.icon}>⌄</Text>
+              <Image source={require('../assets/icons/down_arrow.png')} />
             </View>
-            <View style={styles.requiredBar} />
           </TouchableOpacity>
 
           {/* PIN */}
-          <TextInput
-            style={styles.input}
-            placeholder="PIN Code"
-            value={pinCode}
-            onChangeText={setPinCode}
-            keyboardType="number-pad"
-            maxLength={6}
-            placeholderTextColor="#6B7280"
-          />
+          <View style={styles.commonWrapper}>
+            <TextInput
+              style={styles.input}
+              placeholder="PIN Code"
+              value={pinCode}
+              onChangeText={setPinCode}
+              keyboardType="number-pad"
+              placeholderTextColor="#9CA3AF"
+            />{' '}
+          </View>
 
           {/* Permanent Address */}
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder="Permanent Address"
-            value={permanentAddress}
-            onChangeText={setPermanentAddress}
-            multiline
-            placeholderTextColor="#6B7280"
-          />
+          <View style={styles.commonWrapper}>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              placeholder="Permanent Address"
+              value={permanentAddress}
+              onChangeText={setPermanentAddress}
+              multiline
+              placeholderTextColor="#9CA3AF"
+            />
+          </View>
 
           {/* Temporary Address */}
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder="Temporary Address"
-            value={temporaryAddress}
-            onChangeText={setTemporaryAddress}
-            multiline
-            placeholderTextColor="#6B7280"
-          />
+          <View style={styles.commonWrapper}>
+            <TextInput
+              style={[styles.input]}
+              placeholder="Temporary Address"
+              value={temporaryAddress}
+              onChangeText={setTemporaryAddress}
+              multiline
+              placeholderTextColor="#9CA3AF"
+            />
+          </View>
 
           {/* Buttons */}
           <View style={styles.buttonRow}>
-            <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+            <TouchableOpacity style={styles.saveBtn}>
               <Text style={styles.saveText}>Save & Continue</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.clearButton} onPress={() => {}}>
+            <TouchableOpacity style={styles.clearBtn}>
               <Text style={styles.clearText}>Clear</Text>
             </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
-
-      {/* Date Picker */}
-      {showDatePicker && (
-        Platform.OS === 'android' ? (
-          <DateTimePicker
-            value={dob || new Date()}
-            mode="date"
-            onChange={(_, d) => {
-              setShowDatePicker(false);
-              if (d) setDob(d);
-            }}
-          />
-        ) : (
-          <Modal transparent animationType="slide">
-            <View style={styles.dateModal}>
-              <DateTimePicker
-                value={dob || new Date()}
-                mode="date"
-                display="spinner"
-                onChange={(_, d) => d && setDob(d)}
-              />
-              <TouchableOpacity
-                style={styles.doneBtn}
-                onPress={() => setShowDatePicker(false)}
-              >
-                <Text style={styles.doneText}>Done</Text>
-              </TouchableOpacity>
-            </View>
-          </Modal>
-        )
-      )}
     </SafeAreaView>
   );
 };
 
 export default OnboardingScreen;
 
-
 const styles = StyleSheet.create({
-    safeArea: { flex: 1, backgroundColor: '#fff' },
-    container: { padding: 20, paddingBottom: 80 },
-  
-    header: {
-      fontSize: 26,
-      fontWeight: '700',
-      textAlign: 'center',
-      color: '#0F172A',
-      marginBottom: 24,
-    },
-  
-    formCard: {
-      backgroundColor: '#fff',
-      borderRadius: 28,
-      padding: 24,
-      elevation: 6,
-    },
-  
-    mandatoryRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-    mandatoryDot: { width: 8, height: 8, backgroundColor: '#F87171', borderRadius: 4, marginRight: 8 },
-    mandatoryText: { fontSize: 14, color: '#6B7280' },
-  
-    requiredWrapper: { position: 'relative', marginBottom: 16 },
-    requiredBar: {
-      position: 'absolute',
-      right: 0,
-      top: 0,
-      bottom: 0,
-      width: 6,
-      backgroundColor: '#F87171',
-      borderTopRightRadius: 12,
-      borderBottomRightRadius: 12,
-    },
-  
-    input: {
-      backgroundColor: '#EEF2FF',
-      borderRadius: 12,
-      padding: 14,
-      fontSize: 16,
-    },
-  
-    dropdown: {
-      backgroundColor: '#EEF2FF',
-      borderRadius: 12,
-      padding: 14,
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-    },
-  
-    dropdownText: { fontSize: 16, color: '#0F172A' },
-    placeholder: { color: '#9CA3AF' },
-    icon: { fontSize: 16, color: '#6B7280' },
-  
-    mobileContainer: {
-      backgroundColor: '#EEF2FF',
-      borderRadius: 12,
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 12,
-    },
-    flag: { fontSize: 16, marginRight: 6 },
-    code: { fontSize: 16, marginRight: 10 },
-    mobileInput: { flex: 1, fontSize: 16 },
-  
-    textArea: { height: 90, textAlignVertical: 'top' },
-  
-    buttonRow: { flexDirection: 'row', marginTop: 24 },
-    saveButton: {
-      flex: 1,
-      backgroundColor: '#0F172A',
-      padding: 14,
-      borderRadius: 14,
-      marginRight: 8,
-    },
-    clearButton: {
-      flex: 1,
-      backgroundColor: '#EFF6FF',
-      padding: 14,
-      borderRadius: 14,
-      marginLeft: 8,
-    },
-    saveText: { color: '#fff', textAlign: 'center', fontWeight: '600' },
-    clearText: { color: '#1E40AF', textAlign: 'center', fontWeight: '600' },
-  
-    dateModal: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.4)' },
-    doneBtn: { backgroundColor: '#0F172A', padding: 16 },
-    doneText: { color: '#fff', textAlign: 'center', fontWeight: '600', fontSize: 18 },
-  });
-  
+  safe: { flex: 1, backgroundColor: '#F8FAFC' },
+
+  container: {
+    paddingBottom: 80,
+  },
+
+  headerBg: {
+    width: '100%',
+    height: 150,
+    position: 'absolute',
+    top: 0,
+    resizeMode: 'stretch',
+  },
+
+  headerText: {
+    marginTop: 50,
+    fontSize: 20,
+    fontFamily: getFontFamily('medium'),
+    textAlign: 'center',
+    color: '#111827',
+  },
+
+  card: {
+    marginTop: 20,
+    backgroundColor: '#FFF',
+    borderRadius: 24,
+    padding: 24,
+    elevation: 5,
+    marginHorizontal: 20,
+  },
+
+  mandatoryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+
+  dot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#EF4444',
+    marginRight: 8,
+  },
+
+  mandatoryText: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+
+  requiredWrapper: {
+    borderRightWidth: 4,
+    borderRightColor: '#FF8484',
+    borderRadius: 10,
+    marginBottom: 12,
+    backgroundColor: '#FF8484'
+  },
+
+  commonWrapper: {
+    marginBottom: 12,
+  },
+
+  input: {
+    height: FIELD_HEIGHT,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    fontSize: 15,
+    backgroundColor: '#F9FAFB',
+  },
+
+  dropdown: {
+    height: FIELD_HEIGHT,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    backgroundColor: '#F9FAFB',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+
+  valueText: {
+    fontSize: 15,
+    color: '#111827',
+  },
+
+  placeholder: {
+    color: '#9CA3AF',
+  },
+
+  mobileRow: {
+    height: FIELD_HEIGHT,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+  },
+
+  flag: { width: 22, height: 14, marginRight: 8 },
+
+  code: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginRight: 8,
+  },
+
+  mobileInput: {
+    flex: 1,
+    fontSize: 15,
+  },
+
+  textArea: {
+    height: 80,
+    paddingTop: 12,
+    textAlignVertical: 'top',
+  },
+
+  buttonRow: {
+    flexDirection: 'row',
+    marginTop: 24,
+  },
+
+  saveBtn: {
+    flex: 1,
+    backgroundColor: '#111827',
+    paddingVertical: 12,
+    borderRadius: 14,
+    marginRight: 8,
+  },
+
+  clearBtn: {
+    flex: 1,
+    backgroundColor: '#E5E7EB',
+    paddingVertical: 12,
+    borderRadius: 14,
+    marginLeft: 8,
+  },
+
+  saveText: {
+    color: '#FFF',
+    fontSize: 16,
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+
+  clearText: {
+    color: '#111827',
+    fontSize: 16,
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+});
