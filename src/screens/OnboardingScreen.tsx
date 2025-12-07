@@ -1,3 +1,5 @@
+// src/screens/OnboardingScreen.tsx
+
 import React, { useState } from 'react';
 import {
   View,
@@ -8,16 +10,37 @@ import {
   SafeAreaView,
   ScrollView,
   Image,
+  Alert,
+  Platform,
+  Modal,
 } from 'react-native';
 
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
 import { getFontFamily } from '../utils/fontFamily';
+import { RootStackParamList } from '../navigation/types';
+
+type NavProp = NativeStackNavigationProp<RootStackParamList, 'Onboarding'>;
 
 const FIELD_HEIGHT = 44;
 
+const STATES = ['Maharashtra', 'Karnataka', 'Tamil Nadu'];
+const CITIES: Record<string, string[]> = {
+  Maharashtra: ['Mumbai', 'Pune'],
+  Karnataka: ['Bangalore', 'Mysore'],
+  'Tamil Nadu': ['Chennai', 'Coimbatore'],
+};
+
+const GENDERS = ['Male', 'Female', 'Other'];
+
 const OnboardingScreen = () => {
+  const navigation = useNavigation<NavProp>();
+
   const [fullName, setFullName] = useState('');
   const [gender, setGender] = useState('');
-  const [dob, setDob] = useState('');
+  const [dob, setDob] = useState<Date | null>(null);
   const [email, setEmail] = useState('');
   const [mobile, setMobile] = useState('');
   const [stateVal, setStateVal] = useState('');
@@ -26,9 +49,41 @@ const OnboardingScreen = () => {
   const [permanentAddress, setPermanentAddress] = useState('');
   const [temporaryAddress, setTemporaryAddress] = useState('');
 
-  const onPressMock = (label: string) => {
-    console.log(label, 'clicked');
+  const [showDOB, setShowDOB] = useState(false);
+
+  /* ---------------- VALIDATIONS ---------------- */
+
+  const nameRegex = /^[A-Za-z ]+$/;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const mobileRegex = /^[6-9]\d{9}$/;
+
+  const validateAndSubmit = () => {
+    if (!fullName.trim())
+      return Alert.alert('Missing Field', 'Full Name is mandatory');
+
+    if (!nameRegex.test(fullName))
+      return Alert.alert('Invalid Name', 'Name should contain only alphabets');
+
+    if (email && !emailRegex.test(email))
+      return Alert.alert('Invalid Email', 'Please enter a valid email address');
+
+    if (!mobile)
+      return Alert.alert('Missing Field', 'Mobile number is mandatory');
+
+    if (!mobileRegex.test(mobile))
+      return Alert.alert('Invalid Mobile', 'Enter a valid 10-digit mobile number');
+
+    if (!stateVal)
+      return Alert.alert('Missing Field', 'State is mandatory');
+
+    if (!city)
+      return Alert.alert('Missing Field', 'City is mandatory');
+
+    // ✅ All validation passed
+    navigation.replace('Home');
   };
+
+  /* ---------------- UI ---------------- */
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -39,7 +94,7 @@ const OnboardingScreen = () => {
           style={styles.headerBg}
         />
 
-        {/* HEADER TEXT ON IMAGE */}
+        {/* HEADER TEXT */}
         <Text style={styles.headerText}>Complete Your Profile</Text>
 
         {/* CARD */}
@@ -50,7 +105,7 @@ const OnboardingScreen = () => {
             <Text style={styles.mandatoryText}>mandatory</Text>
           </View>
 
-          {/* Full Name */}
+          {/* Full Name (Mandatory) */}
           <View style={styles.requiredWrapper}>
             <TextInput
               style={styles.input}
@@ -64,8 +119,16 @@ const OnboardingScreen = () => {
           {/* Gender */}
           <TouchableOpacity
             style={styles.commonWrapper}
-            onPress={() => onPressMock('Gender')}
-            activeOpacity={0.7}
+            onPress={() =>
+              Alert.alert(
+                'Select Gender',
+                '',
+                GENDERS.map(g => ({
+                  text: g,
+                  onPress: () => setGender(g),
+                }))
+              )
+            }
           >
             <View style={styles.dropdown}>
               <Text style={[styles.valueText, !gender && styles.placeholder]}>
@@ -78,12 +141,11 @@ const OnboardingScreen = () => {
           {/* DOB */}
           <TouchableOpacity
             style={styles.commonWrapper}
-            onPress={() => onPressMock('DOB')}
-            activeOpacity={0.7}
+            onPress={() => setShowDOB(true)}
           >
             <View style={styles.dropdown}>
               <Text style={[styles.valueText, !dob && styles.placeholder]}>
-                {dob || 'Date Of Birth'}
+                {dob ? dob.toLocaleDateString('en-IN') : 'Date Of Birth'}
               </Text>
               <Image source={require('../assets/icons/calendar.png')} />
             </View>
@@ -100,7 +162,7 @@ const OnboardingScreen = () => {
             />
           </View>
 
-          {/* Mobile */}
+          {/* Mobile (Mandatory) */}
           <View style={styles.requiredWrapper}>
             <View style={styles.mobileRow}>
               <Image
@@ -114,16 +176,28 @@ const OnboardingScreen = () => {
                 value={mobile}
                 onChangeText={setMobile}
                 keyboardType="number-pad"
+                maxLength={10}
                 placeholderTextColor="#9CA3AF"
               />
             </View>
           </View>
 
-          {/* State */}
+          {/* State (Mandatory) */}
           <TouchableOpacity
             style={styles.requiredWrapper}
-            onPress={() => onPressMock('State')}
-            activeOpacity={0.7}
+            onPress={() =>
+              Alert.alert(
+                'Select State',
+                '',
+                STATES.map(s => ({
+                  text: s,
+                  onPress: () => {
+                    setStateVal(s);
+                    setCity('');
+                  },
+                }))
+              )
+            }
           >
             <View style={styles.dropdown}>
               <Text style={[styles.valueText, !stateVal && styles.placeholder]}>
@@ -133,11 +207,22 @@ const OnboardingScreen = () => {
             </View>
           </TouchableOpacity>
 
-          {/* City */}
+          {/* City (Mandatory) */}
           <TouchableOpacity
             style={styles.requiredWrapper}
-            onPress={() => onPressMock('City')}
-            activeOpacity={0.7}
+            onPress={() => {
+              if (!stateVal)
+                return Alert.alert('Info', 'Select state first');
+
+              Alert.alert(
+                'Select City',
+                '',
+                (CITIES[stateVal] || []).map(c => ({
+                  text: c,
+                  onPress: () => setCity(c),
+                }))
+              );
+            }}
           >
             <View style={styles.dropdown}>
               <Text style={[styles.valueText, !city && styles.placeholder]}>
@@ -155,8 +240,9 @@ const OnboardingScreen = () => {
               value={pinCode}
               onChangeText={setPinCode}
               keyboardType="number-pad"
+              maxLength={6}
               placeholderTextColor="#9CA3AF"
-            />{' '}
+            />
           </View>
 
           {/* Permanent Address */}
@@ -174,7 +260,7 @@ const OnboardingScreen = () => {
           {/* Temporary Address */}
           <View style={styles.commonWrapper}>
             <TextInput
-              style={[styles.input]}
+              style={[styles.input, styles.textArea]}
               placeholder="Temporary Address"
               value={temporaryAddress}
               onChangeText={setTemporaryAddress}
@@ -185,20 +271,61 @@ const OnboardingScreen = () => {
 
           {/* Buttons */}
           <View style={styles.buttonRow}>
-            <TouchableOpacity style={styles.saveBtn}>
+            <TouchableOpacity style={styles.saveBtn} onPress={validateAndSubmit}>
               <Text style={styles.saveText}>Save & Continue</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.clearBtn}>
+            <TouchableOpacity
+              style={styles.clearBtn}
+              onPress={() => {
+                setFullName('');
+                setEmail('');
+                setMobile('');
+                setStateVal('');
+                setCity('');
+              }}
+            >
               <Text style={styles.clearText}>Clear</Text>
             </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
+
+      {/* DATE PICKER */}
+      {showDOB && (
+        Platform.OS === 'android' ? (
+          <DateTimePicker
+            value={dob || new Date()}
+            mode="date"
+            onChange={(_, d) => {
+              setShowDOB(false);
+              if (d) setDob(d);
+            }}
+          />
+        ) : (
+          <Modal transparent>
+            <View style={{ flex: 1, justifyContent: 'flex-end' }}>
+              <DateTimePicker
+                value={dob || new Date()}
+                mode="date"
+                onChange={(_, d) => d && setDob(d)}
+              />
+              <TouchableOpacity
+                style={{ padding: 16, backgroundColor: '#111827' }}
+                onPress={() => setShowDOB(false)}
+              >
+                <Text style={{ color: '#FFF', textAlign: 'center' }}>Done</Text>
+              </TouchableOpacity>
+            </View>
+          </Modal>
+        )
+      )}
     </SafeAreaView>
   );
 };
 
 export default OnboardingScreen;
+
+
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#F8FAFC' },
