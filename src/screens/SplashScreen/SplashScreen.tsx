@@ -114,7 +114,7 @@ const SplashScreen = () => {
                 activeOpacity={0.8}
                 style={styles.buttonWrapper}
                 onPress={()=>{
-                  navigation.replace('Home');
+                  navigation.replace('Login');
                 }}
               >
                 <Image
