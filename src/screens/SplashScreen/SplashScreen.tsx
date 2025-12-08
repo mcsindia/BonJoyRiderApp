@@ -13,6 +13,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
+import { sh,s,sw,sf } from '../../utils/scale';
 
 const { width, height } = Dimensions.get('window');
 const SCREEN_COUNT = 3;
@@ -151,7 +152,7 @@ const styles = StyleSheet.create({
   thirdImageBox: { width: '100%', height: height * 0.75, justifyContent: 'center', alignItems: 'center' },
   thirdImage: { width: '100%', height: '100%', resizeMode: 'stretch' },
   buttonWrapper: { width: '100%', alignItems: 'center' },
-  buttonImage: { width: '85%', height: 60, resizeMode: 'contain' },
-  bottomWhite: { width: '100%', alignItems: 'center', marginTop: 20, flex: 1 },
-  bottomSmallImg: { width: '70%', height: 50, resizeMode: 'contain' },
+  buttonImage: { width: '85%', height: sh(60), resizeMode: 'contain' },
+  bottomWhite: { width: '100%', alignItems: 'center', marginTop: s(20), flex: 1 },
+  bottomSmallImg: { width: '70%', height: sh(50), resizeMode: 'contain' },
 });

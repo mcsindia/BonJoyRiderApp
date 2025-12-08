@@ -16,6 +16,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { getFontFamily } from '../utils/fontFamily';
+import { s, sf, sh, sw } from '../utils/scale';
 
 const BOTTOM_IMAGE_HEIGHT = 200;
 const OTP_LENGTH = 4;
@@ -231,60 +232,60 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#FFF' },
   scrollContent: { paddingBottom: BOTTOM_IMAGE_HEIGHT + 40 },
   headerBg: {
-    height: 280,
+    height: sh(280),
     backgroundColor: '#FFC533',
-    borderBottomLeftRadius: 32,
-    borderBottomRightRadius: 32,
+    borderBottomLeftRadius: s(32),
+    borderBottomRightRadius: s(32),
     justifyContent: 'center',
     alignItems: 'center',
   },
   scooterImg: { width: '78%', height: '78%' },
   card: {
-    marginHorizontal: 20,
-    marginTop: -80,
+    marginHorizontal: sw(20),
+    marginTop: sh(-80),
     backgroundColor: '#FFF',
-    borderRadius: 24,
-    padding: 24,
+    borderRadius: s(24),
+    padding: s(24),
     elevation: 6,
   },
   title: {
-    fontSize: 20,
+    fontSize: sf(20),
     color: '#0F172A',
-    marginBottom: 10,
+    marginBottom: sh(10),
     fontFamily: getFontFamily('semiBold'),
   },
   subtitle: {
-    fontSize: 10,
+    fontSize: sf(10),
     color: '#AEAAAA',
-    marginBottom: 24,
+    marginBottom: sh(24),
     fontFamily: getFontFamily('regular'),
-    lineHeight: 22,
+    lineHeight: sf(22),
   },
   phoneInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 50,
-    borderRadius: 30,
+    height: sh(50),
+    borderRadius: s(30),
     borderWidth: 1.2,
     borderColor: '#B4CBFF',
-    marginBottom: 24,
+    marginBottom: sh(24),
     backgroundColor: '#F8FAFC',
-    paddingStart: 10
+    paddingStart: sw(10)
   },
   countrySelector: {
     flexDirection: 'row',
     alignItems: 'center'
   },
   downArrow: {
-    fontSize: 14,
+    fontSize: sf(14),
     color: '#6B7280',
-    marginLeft: 4,
+    marginLeft: sw(4),
   },
   divider: {
     width: 1,
-    height: 24,
+    height: sh(24),
     backgroundColor: '#D1D5DB',
-    marginHorizontal: 12,
+    marginHorizontal: sh(12),
   },
   codeAndInput: {
     flex: 1,
@@ -292,14 +293,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   callingCode: {
-    fontSize: 18,
+    fontSize: sf(18),
     fontWeight: '500',
     color: '#0F172A',
     fontFamily: getFontFamily('regular')
   },
   phoneInput: {
     flex: 1,
-    fontSize: 18,
+    fontSize: sf(18),
     color: '#0F172A',
     paddingVertical: 0,
     fontFamily: getFontFamily('regular'),
@@ -308,37 +309,37 @@ const styles = StyleSheet.create({
   otpRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 24,
+    marginBottom: sh(24),
   },
   otpBox: {
-    width: 56,
-    height: 56,
-    borderRadius: 12,
+    width: sw(56),
+    height: sh(56),
+    borderRadius: s(12),
     borderWidth: 1.2,
     borderColor: '#D1D5DB',
-    fontSize: 20,
+    fontSize: sf(20),
     textAlign: 'center',
     fontFamily: getFontFamily('semiBold'),
   },
   resendRow: { flexDirection: 'row', marginBottom: 24, flex: 1, justifyContent: 'space-between' },
   resendText: {
-    fontSize: 15,
+    fontSize: sf(15),
     color: '#6B7280'
   },
   resendAction: {
-    fontSize: 15,
+    fontSize: sf(15),
     color: '#FBBF24',
     fontFamily: getFontFamily('semiBold')
   },
   button: {
-    height: 56,
+    height: sh(56),
     backgroundColor: '#0F172A',
-    borderRadius: 14,
+    borderRadius: s(14),
     justifyContent: 'center',
     alignItems: 'center',
   },
   buttonText: {
-    fontSize: 18,
+    fontSize: sf(18),
     color: '#FFF',
     fontFamily: getFontFamily('semiBold'),
   },
@@ -358,27 +359,27 @@ const styles = StyleSheet.create({
   modalCard: {
     width: '82%',
     backgroundColor: '#FFF',
-    borderRadius: 24,
-    padding: 24,
+    borderRadius: s(24),
+    padding: s(24),
     alignItems: 'center',
     elevation: 8,
   },
   modalText: {
-    fontSize: 18,
+    fontSize: sf(18),
     color: '#4B5563',
     textAlign: 'center',
-    marginBottom: 20,
-    lineHeight: 24,
+    marginBottom: sh(20),
+    lineHeight: sh(24),
     fontFamily: getFontFamily('regular'),
   },
   modalButton: {
     backgroundColor: '#1E293B',
-    paddingHorizontal: 36,
-    paddingVertical: 12,
-    borderRadius: 24,
+    paddingHorizontal: sw(36),
+    paddingVertical: sh(12),
+    borderRadius: s(24),
   },
   modalButtonText: {
-    fontSize: 16,
+    fontSize: sf(16),
     color: '#FFF',
     fontFamily: getFontFamily('semiBold'),
   },
