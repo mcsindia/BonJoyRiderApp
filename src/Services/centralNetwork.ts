@@ -1,99 +1,242 @@
-// src/network/centralNetwork.ts
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+/* ======================================================
+   CONFIG
+====================================================== */
+
+const BASE_URL = 'https://bonjoy.in:5000/api/v1';
+
+const ACCESS_TOKEN = 'ACCESS_TOKEN';
+const REFRESH_TOKEN = 'REFRESH_TOKEN';
+
+/* ======================================================
+   COMMON TYPES
+====================================================== */
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
-interface ApiRequestConfig {
-  url: string;
+interface ApiOptions {
   method?: HttpMethod;
-  queryParams?: Record<string, any>;
   body?: any;
-  headers?: Record<string, string>;
-  token?: string;
-  timeout?: number;
+  isFormData?: boolean;
+  requireAuth?: boolean;
 }
 
-const DEFAULT_TIMEOUT = 15000;
+/* ======================================================
+   AUTH TYPES
+====================================================== */
 
-/* -------------------------------------------------------
-   Helper: Query string builder
-------------------------------------------------------- */
-const buildQueryString = (params?: Record<string, any>) => {
-  if (!params) return '';
-  const query = Object.entries(params)
-    .filter(([, v]) => v !== undefined && v !== null)
-    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
-    .join('&');
-  return query ? `?${query}` : '';
-};
+export interface LoginWithMobileRequest {
+  mobile: string;
+}
 
-/* -------------------------------------------------------
-   Central API Handler
-------------------------------------------------------- */
-export const apiRequest = async <T = any>({
-  url,
-  method = 'GET',
-  queryParams,
-  body,
-  headers = {},
-  token,
-  timeout = DEFAULT_TIMEOUT,
-}: ApiRequestConfig): Promise<T> => {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeout);
+export interface LoginWithMobileResponse {
+  message: string;
+  success?: boolean;
+}
+
+export interface VerifyOtpRequest {
+  mobile: string;
+  otp: string;
+}
+
+export interface VerifyOtpResponse {
+  accessToken: string;
+  refreshToken?: string;
+  user?: {
+    id: number;
+    mobile: string;
+  };
+}
+
+/* ======================================================
+   RIDER TYPES
+====================================================== */
+
+export interface RiderProfile {
+  id: number;
+  riderId: number;
+  fullName: string;
+  gender: string;
+  dob: string;
+  email: string;
+  city: string;
+  preferredPaymentMethod: string;
+  status: string;
+  userProfile?: string;
+}
+
+export interface GetRidersResponse {
+  data: RiderProfile[];
+  page: number;
+  limit: number;
+  total: number;
+}
+
+/* ======================================================
+   LOW LEVEL REQUEST (SINGLE CORE)
+====================================================== */
+
+const request = async <T = any>(
+  endpoint: string,
+  options: ApiOptions = {}
+): Promise<T> => {
+  const {
+    method = 'GET',
+    body,
+    isFormData = false,
+    requireAuth = false,
+  } = options;
+
+  const url = `${BASE_URL}${endpoint}`;
+  const headers: Record<string, string> = {};
+
+  if (!isFormData) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  if (requireAuth) {
+    const token = await AsyncStorage.getItem(ACCESS_TOKEN);
+    if (token) headers.Authorization = `Bearer ${token}`;
+  }
+
+  /* ✅ FULL REQUEST LOG */
+  console.log('➡️ API REQUEST');
+  console.log('URL:', url);
+  console.log('METHOD:', method);
+  console.log('HEADERS:', headers);
+  console.log('BODY:', body);
 
   try {
-    const finalUrl = `${url}${buildQueryString(queryParams)}`;
-    const isFormData = body instanceof FormData;
-
-    const response = await fetch(finalUrl, {
+    const response = await fetch(url, {
       method,
-      headers: {
-        ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...headers,
-      },
+      headers,
       body:
         method === 'GET' || method === 'DELETE'
           ? undefined
           : isFormData
           ? body
           : JSON.stringify(body),
-      signal: controller.signal,
     });
 
     const text = await response.text();
-    const data = text ? JSON.parse(text) : null;
+    console.log('⬅️ API RESPONSE:', text);
+
+    const data: T = text ? JSON.parse(text) : ({} as T);
 
     if (!response.ok) {
-      throw {
-        status: response.status,
-        message: data?.message || 'API Error',
-        data,
-      };
+      throw new Error(
+        (data as any)?.message || 'Network request failed'
+      );
     }
 
     return data;
-  } catch (err: any) {
-    if (err.name === 'AbortError') {
-      throw new Error('Request timeout');
-    }
-    throw err;
-  } finally {
-    clearTimeout(timer);
+  } catch (error: any) {
+    console.error('❌ API ERROR:', error.message);
+    throw error;
   }
 };
 
-/* -------------------------------------------------------
-   HTTP Helpers
-------------------------------------------------------- */
-export const GET = <T>(url: string, queryParams?: any, config?: Partial<ApiRequestConfig>) =>
-  apiRequest<T>({ url, queryParams, method: 'GET', ...config });
+/* ======================================================
+   AUTH APIS
+====================================================== */
 
-export const POST = <T>(url: string, body?: any, config?: Partial<ApiRequestConfig>) =>
-  apiRequest<T>({ url, body, method: 'POST', ...config });
+export const loginWithMobile = (
+  mobile: string
+): Promise<LoginWithMobileResponse> => {
+  return request<LoginWithMobileResponse>('/loginWithMobile', {
+    method: 'POST',
+    body: { mobile } as LoginWithMobileRequest,
+  });
+};
 
-export const PUT = <T>(url: string, body?: any, config?: Partial<ApiRequestConfig>) =>
-  apiRequest<T>({ url, body, method: 'PUT', ...config });
+export const verifyOtpAndLogin = async (
+  mobile: string,
+  otp: string
+): Promise<VerifyOtpResponse> => {
+  const response = await request<VerifyOtpResponse>(
+    '/verifyOtpAndLogin',
+    {
+      method: 'POST',
+      body: { mobile, otp } as VerifyOtpRequest,
+    }
+  );
 
-export const DELETE = <T>(url: string, queryParams?: any, config?: Partial<ApiRequestConfig>) =>
-  apiRequest<T>({ url, queryParams, method: 'DELETE', ...config });
+  // ✅ Save tokens
+  if (response.accessToken) {
+    await AsyncStorage.setItem(ACCESS_TOKEN, response.accessToken);
+  }
+
+  if (response.refreshToken) {
+    await AsyncStorage.setItem(
+      REFRESH_TOKEN,
+      response.refreshToken
+    );
+  }
+
+  return response;
+};
+
+export const logout = async (): Promise<void> => {
+  await AsyncStorage.multiRemove([ACCESS_TOKEN, REFRESH_TOKEN]);
+};
+
+/* ======================================================
+   RIDER PROFILE APIS
+====================================================== */
+
+export const getAllRiderProfiles = (
+  page: number,
+  limit: number
+): Promise<GetRidersResponse> => {
+  return request<GetRidersResponse>(
+    `/getAllRiderProfiles?page=${page}&limit=${limit}`,
+    { requireAuth: true }
+  );
+};
+
+export const getRiderProfileById = (
+  id: number
+): Promise<RiderProfile> => {
+  return request<RiderProfile>(`/getRiderProfileById/${id}`, {
+    requireAuth: true,
+  });
+};
+
+export const createRiderProfile = (
+  formData: FormData
+): Promise<RiderProfile> => {
+  return request<RiderProfile>('/createRiderProfile', {
+    method: 'POST',
+    body: formData,
+    isFormData: true,
+    requireAuth: true,
+  });
+};
+
+export const updateRiderProfile = (
+  id: number,
+  formData: FormData
+): Promise<RiderProfile> => {
+  return request<RiderProfile>(
+    `/updateRiderProfile/${id}`,
+    {
+      method: 'PUT',
+      body: formData,
+      isFormData: true,
+      requireAuth: true,
+    }
+  );
+};
+
+export const deleteRiderProfile = (
+  id: number
+): Promise<{ message: string }> => {
+  return request<{ message: string }>(
+    `/deleteRiderProfile/${id}`,
+    {
+      method: 'DELETE',
+      requireAuth: true,
+    }
+  );
+};

@@ -73,7 +73,7 @@ const EmergencyContactsScreen = ({ navigation }: any) => {
       </Text>
       <TouchableOpacity style={styles.addContactBtn} onPress={() => setView('add')}>
         <Image
-          source={require('../../assets/icons/left_arrow.png')}
+          source={require('../../assets/icons/add.png')}
           style={styles.plusIcon}
         />
         <Text style={styles.addContactText}>Add Emergency Contact</Text>
@@ -117,8 +117,8 @@ const EmergencyContactsScreen = ({ navigation }: any) => {
       {/* ADD BUTTON */}
       <TouchableOpacity style={styles.addButton} onPress={() => setView('add')}>
         <Image
-          source={require('../../assets/icons/left_arrow.png')}
-          style={styles.plusIcon}
+          source={require('../../assets/icons/add.png')}
+          style={styles.plusIcon2}
         />
       </TouchableOpacity>
     </>
@@ -169,9 +169,6 @@ const EmergencyContactsScreen = ({ navigation }: any) => {
 
       {/* SAVE / CANCEL BUTTONS */}
       <View style={styles.buttonRow}>
-        <TouchableOpacity style={styles.cancelBtn} onPress={handleCancel}>
-          <Text style={styles.cancelText}>Cancel</Text>
-        </TouchableOpacity>
         <TouchableOpacity style={styles.saveBtn} onPress={handleAddContact}>
           <Text style={styles.saveText}>Add Contact</Text>
         </TouchableOpacity>
@@ -288,12 +285,11 @@ const styles = StyleSheet.create({
     marginHorizontal: 20 
   },
   emptyTitle: {
-    fontSize: 24,
-    fontWeight: '700',
+    fontSize: 18,
     color: '#0F172A',
     textAlign: 'center',
     marginBottom: 20,
-    fontFamily: getFontFamily('bold'),
+    fontFamily: getFontFamily('medium'),
   },
   instruction: {
     fontSize: 14,
@@ -301,11 +297,12 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     lineHeight: 20,
     fontFamily: getFontFamily('regular'),
+    textAlign:'center'
   },
   addContactBtn: {
     backgroundColor: '#111827',
     borderRadius: 14,
-    paddingVertical: 12,
+    paddingVertical: 8,
     paddingHorizontal: 24,
     flexDirection: 'row',
     alignItems: 'center',
@@ -317,12 +314,18 @@ const styles = StyleSheet.create({
     height: 20,
     tintColor: '#FFFFFF',
     marginRight: 8,
+    alignSelf: 'center'
+  },
+  plusIcon2: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    tintColor: 'white'
   },
   addContactText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '600',
-    fontFamily: getFontFamily('semiBold'),
+    fontFamily: getFontFamily('regular')
   },
   contactItem: {
     flexDirection: 'row',
@@ -380,7 +383,7 @@ const styles = StyleSheet.create({
     borderColor: '#E2E8F0',
     borderRadius: 12,
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 8,
     fontSize: 16,
     marginBottom: 16,
     backgroundColor: '#F3F4F6',
@@ -392,14 +395,14 @@ const styles = StyleSheet.create({
     borderWidth: 1.2,
     borderColor: '#E2E8F0',
     borderRadius: 12,
-    marginBottom: 16,
     backgroundColor: '#F3F4F6',
-    paddingStart: 10,
+    paddingStart: 5,
+    justifyContent: 'center'
   },
   countrySelector: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     borderRightWidth: 1.2,
     borderRightColor: '#E2E8F0',
   },
@@ -414,69 +417,47 @@ const styles = StyleSheet.create({
     tintColor: '#6B7280',
     marginLeft: 6,
   },
-  divider: {
-    width: 1,
-    height: 24,
-    backgroundColor: '#D1D5DB',
-    marginHorizontal: 12,
-  },
+
   callingCode: {
     fontSize: 16,
     fontWeight: '600',
     color: '#0F172A',
-    marginRight: 8,
+    marginHorizontal: 8,
+    fontFamily: getFontFamily('semiBold')
+    
   },
   mobileInput: {
     flex: 1,
     fontSize: 16,
     fontFamily: getFontFamily('regular'),
+    textAlignVertical: 'center'
   },
   addFromContactsBtn: {
-    backgroundColor: '#EEF2FF',
-    borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
     alignSelf: 'center',
-    marginBottom: 16,
+    marginTop: 50
   },
   addFromContactsText: {
     color: '#1D4ED8',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 14,
     textAlign: 'center',
-    fontFamily: getFontFamily('semiBold'),
+    fontFamily: getFontFamily('regular'),
   },
   buttonRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 24,
-  },
-  cancelBtn: {
-    flex: 1,
-    backgroundColor: '#EFF6FF',
-    borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    marginRight: 8,
-  },
-  cancelText: {
-    color: '#1D4ED8',
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
-    fontFamily: getFontFamily('semiBold'),
+    marginTop: 14,
   },
   saveBtn: {
     flex: 1,
     backgroundColor: '#111827',
     borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     marginLeft: 8,
   },
   saveText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '600',
     textAlign: 'center',
     fontFamily: getFontFamily('semiBold'),
@@ -500,3 +481,5 @@ const styles = StyleSheet.create({
     tintColor: '#FFFFFF',
   },
 });
+
+
