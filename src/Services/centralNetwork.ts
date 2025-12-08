@@ -1,4 +1,4 @@
-// centralNetwork.ts
+// src/network/centralNetwork.ts
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
@@ -15,23 +15,19 @@ interface ApiRequestConfig {
 const DEFAULT_TIMEOUT = 15000;
 
 /* -------------------------------------------------------
-   Helper: Build query string
+   Helper: Query string builder
 ------------------------------------------------------- */
 const buildQueryString = (params?: Record<string, any>) => {
   if (!params) return '';
   const query = Object.entries(params)
     .filter(([, v]) => v !== undefined && v !== null)
-    .map(
-      ([key, value]) =>
-        `${encodeURIComponent(key)}=${encodeURIComponent(value)}`
-    )
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
     .join('&');
-
   return query ? `?${query}` : '';
 };
 
 /* -------------------------------------------------------
-   Central Network Method
+   Central API Handler
 ------------------------------------------------------- */
 export const apiRequest = async <T = any>({
   url,
@@ -47,90 +43,57 @@ export const apiRequest = async <T = any>({
 
   try {
     const finalUrl = `${url}${buildQueryString(queryParams)}`;
+    const isFormData = body instanceof FormData;
 
     const response = await fetch(finalUrl, {
       method,
       headers: {
-        'Content-Type': 'application/json',
+        ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...headers,
       },
       body:
         method === 'GET' || method === 'DELETE'
           ? undefined
+          : isFormData
+          ? body
           : JSON.stringify(body),
       signal: controller.signal,
     });
 
-    const responseText = await response.text();
-    const responseData = responseText ? JSON.parse(responseText) : null;
+    const text = await response.text();
+    const data = text ? JSON.parse(text) : null;
 
     if (!response.ok) {
       throw {
         status: response.status,
-        message: responseData?.message || 'Something went wrong',
-        data: responseData,
+        message: data?.message || 'API Error',
+        data,
       };
     }
 
-    return responseData;
-  } catch (error: any) {
-    if (error.name === 'AbortError') {
-      throw new Error('Request timed out');
+    return data;
+  } catch (err: any) {
+    if (err.name === 'AbortError') {
+      throw new Error('Request timeout');
     }
-    throw error;
+    throw err;
   } finally {
     clearTimeout(timer);
   }
 };
 
 /* -------------------------------------------------------
-   Convenience methods (optional)
+   HTTP Helpers
 ------------------------------------------------------- */
-export const GET = <T>(
-  url: string,
-  queryParams?: Record<string, any>,
-  config?: Partial<ApiRequestConfig>
-) =>
-  apiRequest<T>({
-    url,
-    queryParams,
-    method: 'GET',
-    ...config,
-  });
+export const GET = <T>(url: string, queryParams?: any, config?: Partial<ApiRequestConfig>) =>
+  apiRequest<T>({ url, queryParams, method: 'GET', ...config });
 
-export const POST = <T>(
-  url: string,
-  body?: any,
-  config?: Partial<ApiRequestConfig>
-) =>
-  apiRequest<T>({
-    url,
-    body,
-    method: 'POST',
-    ...config,
-  });
+export const POST = <T>(url: string, body?: any, config?: Partial<ApiRequestConfig>) =>
+  apiRequest<T>({ url, body, method: 'POST', ...config });
 
-export const PUT = <T>(
-  url: string,
-  body?: any,
-  config?: Partial<ApiRequestConfig>
-) =>
-  apiRequest<T>({
-    url,
-    body,
-    method: 'PUT',
-    ...config,
-  });
+export const PUT = <T>(url: string, body?: any, config?: Partial<ApiRequestConfig>) =>
+  apiRequest<T>({ url, body, method: 'PUT', ...config });
 
-export const DELETE = <T>(
-  url: string,
-  queryParams?: Record<string, any>,
-  config?: Partial<ApiRequestConfig>
-) =>
-  apiRequest<T>({
-    url,
-    queryParams,
-    method: 'DELETE',
-    ...config,
-  });
+export const DELETE = <T>(url: string, queryParams?: any, config?: Partial<ApiRequestConfig>) =>
+  apiRequest<T>({ url, queryParams, method: 'DELETE', ...config });
