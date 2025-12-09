@@ -19,17 +19,17 @@ import { s, sf, sh, sw } from '../../utils/scale';
 
 // Mock data — replace with real state or Redux later
 const INITIAL_CONTACTS: any[] = [
-  // { id: 1, name: 'Nikhil', sharing: false },
-  // { id: 2, name: 'Aditya', sharing: false },
+  // example: { id: 1, name: 'Nikhil', sharing: false },
 ];
 
 const EmergencyContactsScreen = ({ navigation }: any) => {
   const [contacts, setContacts] = useState(INITIAL_CONTACTS);
-  const [view, setView] = useState<'list' | 'add'>('list'); // 'list' or 'add'
+  const [view, setView] = useState<'list' | 'add' | 'detail'>('list'); // 'list' or 'add' or 'detail'
   const [name, setName] = useState('');
   const [mobile, setMobile] = useState('');
   const [countryCode, setCountryCode] = useState('IN');
   const [callingCode, setCallingCode] = useState('91');
+  const [selectedContact, setSelectedContact] = useState<any>(null);
 
   // Go back to list view
   const handleCancel = () => {
@@ -48,6 +48,7 @@ const EmergencyContactsScreen = ({ navigation }: any) => {
     const newContact = {
       id: Date.now(), // simple unique ID
       name,
+      mobile,
       sharing: false,
     };
 
@@ -60,9 +61,10 @@ const EmergencyContactsScreen = ({ navigation }: any) => {
     alert('Contact picker would open here');
   };
 
-  // Edit existing contact (navigate to edit screen)
-  const handleContactPress = (id: number) => {
-    navigation.navigate('EditEmergencyContact', { contactId: id });
+  // Show contact detail in same screen (no navigation)
+  const handleContactPress = (contact: any) => {
+    setSelectedContact(contact);
+    setView('detail');
   };
 
   // Render Empty State
@@ -94,7 +96,7 @@ const EmergencyContactsScreen = ({ navigation }: any) => {
         <TouchableOpacity
           key={contact.id}
           style={styles.contactItem}
-          onPress={() => handleContactPress(contact.id)}
+          onPress={() => handleContactPress(contact)}
         >
           <View style={styles.avatarContainer}>
             <Image
@@ -177,6 +179,73 @@ const EmergencyContactsScreen = ({ navigation }: any) => {
     </>
   );
 
+  const renderContactDetail = () => {
+    if (!selectedContact) return null; // safety guard
+    return (
+      <View>
+        {/* CONTACT HEADER CARD */}
+        <View style={styles.contactDetailCard}>
+          <View style={styles.detailAvatar}>
+            <Image
+              source={require('../../assets/images/contact.png')}
+              style={styles.detailAvatarImg}
+            />
+          </View>
+    
+          <View>
+            <Text style={styles.detailName}>{selectedContact.name}</Text>
+            <Text style={styles.detailNumber}>
+              {selectedContact.mobile ? `+${callingCode} ${selectedContact.mobile}` : '+91 88889 78588'}
+            </Text>
+          </View>
+        </View>
+    
+        {/* SHARING TOGGLE INFO */}
+        <View style={styles.detailRow}>
+          <View style={styles.detailRowLeft}>
+            <Image
+              source={require('../../assets/icons/u_bell.png')}
+              style={styles.detailIcon}
+            />
+            <View>
+              <Text style={styles.detailTitle}>Not sharing details</Text>
+              <Text style={styles.detailSubtitle}>
+                Share ride tracking link and driver details
+              </Text>
+            </View>
+          </View>
+    
+          <View style={styles.fakeToggle} />
+        </View>
+    
+        {/* DELETE ROW */}
+        <TouchableOpacity
+          style={styles.detailRow}
+          onPress={() => {
+            // optional: implement delete confirm later
+            const filtered = contacts.filter(c => c.id !== selectedContact.id);
+            setContacts(filtered);
+            setSelectedContact(null);
+            setView('list');
+          }}
+        >
+          <View style={styles.detailRowLeft}>
+            <Image
+              source={require('../../assets/icons/u_user.png')}
+              style={styles.detailIcon}
+            />
+            <Text style={styles.deleteText}>Delete Contact</Text>
+          </View>
+          <Image
+            source={require('../../assets/icons/right_arrow.png')}
+            style={styles.arrowIcon}
+          />
+        </TouchableOpacity>
+      </View>
+    );
+  };
+  
+
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container}>
@@ -187,7 +256,16 @@ const EmergencyContactsScreen = ({ navigation }: any) => {
           resizeMode="stretch"
         />
         <View style={styles.headerRow}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
+          <TouchableOpacity
+            onPress={() => {
+              if (view === 'detail') {
+                setView('list');
+                setSelectedContact(null);
+              } else {
+                navigation.goBack();
+              }
+            }}
+          >
             <Image
               source={require('../../assets/icons/left_arrow.png')}
               style={styles.backIcon}
@@ -205,47 +283,15 @@ const EmergencyContactsScreen = ({ navigation }: any) => {
           {view === 'list' && contacts.length === 0 && renderEmptyState()}
           {view === 'list' && contacts.length > 0 && renderListState()}
           {view === 'add' && renderAddForm()}
+          {view === 'detail' && renderContactDetail()}
         </View>
       </ScrollView>
-
-      {/* BOTTOM NAVIGATION BAR */}
-      {/* <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.navItem}>
-          <Image
-            source={require('../../assets/images/home_drawer.png')}
-            style={styles.navIcon}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Image
-            source={require('../../assets/icons/ride.png')}
-            style={styles.navIcon}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Image
-            source={require('../../assets/icons/profile.png')}
-            style={styles.navIcon}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Image
-            source={require('../../assets/icons/camera.png')}
-            style={styles.navIcon}
-          />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Image
-            source={require('../../assets/icons/support.png')}
-            style={styles.navIcon}
-          />
-        </TouchableOpacity>
-      </View> */}
     </SafeAreaView>
   );
 };
 
 export default EmergencyContactsScreen;
+
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
@@ -518,4 +564,85 @@ const styles = StyleSheet.create({
     height: sh(24),
     tintColor: '#FFFFFF',
   },
+  contactDetailCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: s(1),
+    borderColor: '#CBD5E1',
+    borderStyle: 'dashed',
+    borderRadius: s(20),
+    padding: s(8),
+    marginBottom: sh(24),
+  },
+  
+  detailAvatar: {
+    backgroundColor: '#EEF2FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: sw(16),
+  },
+  
+  detailAvatarImg: {
+    width: sw(45),
+    height: sh(45),
+  },
+  
+  detailName: {
+    fontSize: sf(20),
+    fontFamily: getFontFamily('bold'),
+    color: '#0F172A',
+  },
+  
+  detailNumber: {
+    fontSize: sf(14),
+    color: '#334155',
+    marginTop: sh(4),
+    fontFamily: getFontFamily('regular'),
+  },
+  
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: sh(20),
+    borderBottomWidth: s(1),
+    borderBottomColor: '#E2E8F0',
+  },
+  
+  detailRowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  
+  detailIcon: {
+    width: sw(22),
+    height: sh(22),
+    marginRight: sw(12),
+  },
+  
+  detailTitle: {
+    fontSize: sf(16),
+    fontFamily: getFontFamily('semiBold'),
+    color: '#0F172A',
+  },
+  
+  detailSubtitle: {
+    fontSize: sf(12),
+    color: '#64748B',
+    fontFamily: getFontFamily('regular'),
+  },
+  
+  fakeToggle: {
+    width: sw(44),
+    height: sh(24),
+    borderRadius: s(12),
+    backgroundColor: '#10B981',
+  },
+  
+  deleteText: {
+    fontSize: sf(16),
+    color: '#000000',
+    fontFamily: getFontFamily('semiBold'),
+  },
+  
 });
