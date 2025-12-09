@@ -13,7 +13,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
-import { sh,s,sw,sf } from '../../utils/scale';
+import { sh, s, sw, sf } from '../../utils/scale';
 
 const { width, height } = Dimensions.get('window');
 const SCREEN_COUNT = 3;
@@ -60,9 +60,7 @@ const SplashScreen = () => {
         duration: 300,
         useNativeDriver: true,
       }),
-    ]).start(() => {
-     
-    });
+    ]).start(() => { });
 
     // Cleanup timers
     return () => timers.forEach(clearTimeout);
@@ -114,7 +112,7 @@ const SplashScreen = () => {
               <TouchableOpacity
                 activeOpacity={0.8}
                 style={styles.buttonWrapper}
-                onPress={()=>{
+                onPress={() => {
                   navigation.replace('Login');
                 }}
               >
@@ -143,16 +141,36 @@ export default SplashScreen;
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#FFFFFF' },
   container: { flex: 1, overflow: 'hidden' },
-  sliderContainer: { flexDirection: 'row', width: width * SCREEN_COUNT, height: '100%' },
+  sliderContainer: {
+    flexDirection: 'row',
+    width: width * SCREEN_COUNT,
+    height: '100%',
+  },
   screen: { width, height: '100%' },
-  firstSplashBg: { flex: 1, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center', opacity: 0.8 },
+  firstSplashBg: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    opacity: 0.8,
+  },
   secondSplashBg: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   fullImage: { width: '100%', height: '100%', resizeMode: 'cover' },
   thirdContainer: { flex: 1, backgroundColor: '#FFFFFF', alignItems: 'center' },
-  thirdImageBox: { width: '100%', height: height * 0.75, justifyContent: 'center', alignItems: 'center' },
+  thirdImageBox: {
+    width: '100%',
+    height: height * 0.75,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   thirdImage: { width: '100%', height: '100%', resizeMode: 'stretch' },
   buttonWrapper: { width: '100%', alignItems: 'center' },
   buttonImage: { width: '85%', height: sh(60), resizeMode: 'contain' },
-  bottomWhite: { width: '100%', alignItems: 'center', marginTop: s(20), flex: 1 },
+  bottomWhite: {
+    width: '100%',
+    alignItems: 'center',
+    marginTop: s(20),
+    flex: 1,
+  },
   bottomSmallImg: { width: '70%', height: sh(50), resizeMode: 'contain' },
 });

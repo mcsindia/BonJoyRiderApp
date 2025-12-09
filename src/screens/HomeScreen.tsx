@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { s, sf, sh, sw } from '../utils/scale';
 
 const HomeScreen = () => {
   const navigation = useNavigation();
@@ -85,108 +86,108 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: sw(12),
+    paddingVertical: sh(8),
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
   menuButton: {
-    width: 56,
-    height: 48,
+    width: sw(56),
+    height: sh(48),
     backgroundColor: '#1F344F', // Dark blue as in screenshot
     justifyContent: 'center',
     alignItems: 'center',
-    borderTopLeftRadius: 4,
-    borderBottomLeftRadius: 4
+    borderTopLeftRadius: s(4),
+    borderBottomLeftRadius: s(4)
   },
   menuIcon: {
-    fontSize: 24,
+    fontSize: s(24),
     color: '#FFFFFF',
   },
   searchBarContainer: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    height: 48,
+    height: sh(48),
     borderWidth: 1,
     borderColor: '#D1D5DB',
-    borderTopRightRadius: 4,
-    borderBottomRightRadius: 4,
-    paddingHorizontal: 12,
+    borderTopRightRadius: s(4),
+    borderBottomRightRadius: s(4),
+    paddingHorizontal: sw(12),
     backgroundColor: '#FFFFFF',
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
+    fontSize: sf(16),
     color: '#6B7280',
     paddingVertical: 0,
   },
   searchIcon: {
-    fontSize: 20,
+    fontSize: sf(20),
     color: '#1E40AF', // Matches menu button
   },
   mapContainer: {
-    height: 200,
+    height: sh(200),
     backgroundColor: '#E5E7EB',
     justifyContent: 'center',
     alignItems: 'center',
-    marginHorizontal: 16,
-    marginTop: 12,
-    borderRadius: 12,
+    marginHorizontal: sh(16),
+    marginTop: sh(12),
+    borderRadius: s(12),
   },
   mapText: {
-    fontSize: 16,
+    fontSize: s(16),
     color: '#6B7280',
   },
   destinationHeader: {
     backgroundColor: '#111827',
-    padding: 12,
-    marginHorizontal: 16,
-    marginTop: 12,
-    borderRadius: 8,
+    padding: s(12),
+    marginHorizontal: sh(16),
+    marginTop: sh(12),
+    borderRadius: s(8),
   },
   destinationTitle: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: sf(16),
     fontWeight: '600',
   },
   listContainer: {
-    marginHorizontal: 16,
-    marginTop: 8,
+    marginHorizontal: sw(16),
+    marginTop: s(8),
   },
   destinationItem: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 8,
+    padding: s(12),
+    borderRadius: s(8),
+    marginBottom: s(8),
     borderWidth: 1,
     borderColor: '#E5E7EB',
   },
   locationIcon: {
-    fontSize: 18,
-    marginRight: 8,
+    fontSize: s(18),
+    marginRight: s(8),
     color: '#1F2937',
   },
   destinationName: {
     flex: 1,
-    fontSize: 16,
+    fontSize: s(16),
     color: '#1F2937',
   },
   arrowIcon: {
-    fontSize: 18,
+    fontSize: s(18),
     color: '#6B7280',
   },
   bannerContainer: {
-    marginHorizontal: 16,
-    marginTop: 12,
-    marginBottom: 20,
+    marginHorizontal: sh(16),
+    marginTop: sh(12),
+    marginBottom: sh(20),
   },
   bannerImage: {
     width: '100%',
-    height: 150,
-    borderRadius: 12,
+    height: sh(150),
+    borderRadius: s(12),
   },
 });

@@ -14,12 +14,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
+import { s, sf, sh, sw } from '../../utils/scale';
+
 const DrawerContent = ({ navigation }: any) => {
   const closeAndNavigate = (screen: string) => {
     navigation.closeDrawer();
-    if (screen !== 'Home') {
-      navigation.navigate(screen);
-    }
+  navigation.navigate('HomeTabs', {
+    screen: 'Home',
+    params: {
+      screen: 'EmergencyContacts',
+    },
+  });
   };
 
   return (
@@ -108,89 +113,101 @@ const DrawerContent = ({ navigation }: any) => {
 };
 
 export default DrawerContent;
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    paddingTop: 10
+    paddingTop: sh(10),
   },
+
   headerBg: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
-    height: 150,
-    width: '100%'
+    height: sh(180),
+    width: '100%',
   },
+
   profileSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    margin: 20,
+    margin: s(20),
   },
+
   avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    marginRight: 12,
+    width: sw(60),
+    height: sh(60),
+    borderRadius: s(30),
+    marginHorizontal: sw(12),
   },
+
   profileInfo: {
     flex: 1,
   },
+
   name: {
-    fontSize: 18,
+    fontSize: sf(18),
     fontWeight: '700',
     color: '#0F172A',
     fontFamily: getFontFamily('bold'),
   },
+
   viewProfileBtn: {
     backgroundColor: '#111827',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    marginTop: 8,
+    borderRadius: s(8),
+    paddingHorizontal: sw(12),
+    paddingVertical: sh(6),
+    marginTop: sh(8),
     alignSelf: 'flex-start',
   },
+
   viewProfileText: {
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: sf(14),
     fontWeight: '600',
     fontFamily: getFontFamily('semiBold'),
   },
+
   menu: {
-    paddingTop: 16,
-    paddingBottom: 16,
-    paddingHorizontal: 20
+    paddingTop: sh(40),
+    paddingBottom: sh(16),
+    paddingHorizontal: sw(20),
   },
+
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16,
-    borderBottomWidth: 1,
+    paddingVertical: sh(16),
+    borderBottomWidth: s(1),
     borderBottomColor: '#E2E8F0',
   },
+
   icon: {
-    width: 24,
-    height: 24,
+    width: sw(24),
+    height: sh(24),
     tintColor: '#1F2937',
-    marginRight: 16,
+    marginRight: sw(16),
   },
+
   menuText: {
-    fontSize: 16,
+    fontSize: sf(16),
     color: '#1F2937',
     fontFamily: getFontFamily('regular'),
   },
+
   signOut: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16,
-    borderTopWidth: 1,
+    paddingVertical: sh(16),
+    borderTopWidth: s(1),
     borderTopColor: '#E2E8F0',
     marginTop: 'auto',
-    marginStart: 20
+    marginStart: sw(20),
   },
+
   signOutText: {
-    fontSize: 16,
+    fontSize: sf(16),
     color: '#1F2937',
     fontFamily: getFontFamily('regular'),
   },
