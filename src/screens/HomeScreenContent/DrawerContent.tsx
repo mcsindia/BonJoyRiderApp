@@ -22,7 +22,7 @@ const DrawerContent = ({ navigation }: any) => {
   navigation.navigate('HomeTabs', {
     screen: 'Home',
     params: {
-      screen: 'EmergencyContacts',
+      screen: screen,
     },
   });
   };
@@ -43,7 +43,8 @@ const DrawerContent = ({ navigation }: any) => {
         />
         <View style={styles.profileInfo}>
           <Text style={styles.name}>Sachin Parekh</Text>
-          <TouchableOpacity style={styles.viewProfileBtn}>
+          <TouchableOpacity style={styles.viewProfileBtn}
+          onPress={ ()=>  closeAndNavigate('Profile')}>
             <Text style={styles.viewProfileText}>View Profile</Text>
           </TouchableOpacity>
         </View>
