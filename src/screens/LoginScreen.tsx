@@ -17,6 +17,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { getFontFamily } from '../utils/fontFamily';
 import { s, sf, sh, sw } from '../utils/scale';
+import axios from 'axios';
+import https from 'https';
 
 const BOTTOM_IMAGE_HEIGHT = 200;
 const OTP_LENGTH = 4;
@@ -42,6 +44,32 @@ const MobileVerificationScreen = () => {
     }
   };
 
+
+
+  // axios.get('https://bonjoy.in:5000/api/v1/getAllRiderProfiles?page=2&limit=10',
+  //   {
+  //     httpsAgent: new https.Agent({ rejectUnauthorized: false }),
+  //   }
+  // )
+  // .then(res => console.log(res.data))
+  // .catch(err => console.log(err));
+
+  // const response = axios.post(
+  //   'https://bonjoy.in:5000/api/v1/loginWithMobile',
+  //   {
+  //     "mobile": '7648845208',
+  //   },
+  //   {
+  //     headers: {
+  //       'Content-Type': 'application/json',
+  //     },
+  //     timeout: 15000,
+  //   }
+  // );
+
+
+  // console.log('✅ OTP API Responses:', response.data);
+  
   const onNextPress = useCallback(() => {
     if (phone.length === 10) {
       setStep('OTP');

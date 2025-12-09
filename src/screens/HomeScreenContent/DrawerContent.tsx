@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 
 import { getFontFamily } from '../../utils/fontFamily';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
@@ -22,7 +23,7 @@ const DrawerContent = ({ navigation }: any) => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* YELLOW HEADER WITH PROFILE */}
       <Image
         source={require('../../assets/images/drawer_bg.png')} // 👈 YOUR PNG HERE
@@ -102,7 +103,7 @@ const DrawerContent = ({ navigation }: any) => {
         />
         <Text style={styles.signOutText}>Sign out</Text>
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 };
 
