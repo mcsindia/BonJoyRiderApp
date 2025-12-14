@@ -29,16 +29,98 @@ import {
   loginWithMobile,
   verifyOtpAndLogin,
   getUserSession,
+  getRiderProfileById,
+  saveRiderProfile,
+  hasMandatoryProfileData,
+  transformRiderProfileResult, // Add this export to your API service
+  type RiderProfile,
 } from '../Services/BonjoyApi';
 
 const BOTTOM_IMAGE_HEIGHT = 200;
 const OTP_LENGTH = 4;
-const RESEND_TIMER_SECONDS = 60;
+const RESEND_TIMER_SECONDS = 30;
 
 type NavProp = NativeStackNavigationProp<
   RootStackParamList,
   'Splash'
 >;
+
+/* =====================================================
+   HELPER FUNCTIONS
+====================================================== */
+
+/**
+ * Extracts and transforms rider profile from API response
+ */
+const extractRiderProfile = async (
+  userId: number
+): Promise<RiderProfile | null> => {
+  try {
+    const response = await getRiderProfileById(userId);
+    const profileResult = response.data?.data?.results?.[0];
+    
+    if (!profileResult) {
+      console.log('No profile found for user ID:', userId);
+      return null;
+    }
+
+    // Transform the API response to match RiderProfile interface
+    return transformRiderProfileResult(profileResult);
+  } catch (error) {
+    console.error('Error fetching rider profile:', error);
+    throw error;
+  }
+};
+
+/**
+ * Handles successful authentication and navigation
+ */
+const handleSuccessfulAuth = async (
+  userId: number,
+  navigation: NavProp
+): Promise<void> => {
+  try {
+    const profile = await extractRiderProfile(userId);
+    
+    if (profile) {
+      await saveRiderProfile(profile);
+      
+      const shouldGoToHome = hasMandatoryProfileData(profile);
+      console.log('Navigation decision:', {
+        hasProfile: !!profile,
+        hasMandatoryData: shouldGoToHome,
+        profileFields: {
+          fullName: !!profile.fullName,
+          gender: !!profile.gender,
+          city: !!profile.city,
+          mobile: !!profile.mobile,
+        },
+      });
+
+      navigation.reset({
+        index: 0,
+        routes: [
+          {
+            name: shouldGoToHome ? 'Home' : 'Onboarding',
+          },
+        ],
+      });
+    } else {
+      // No profile exists, go to onboarding
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Onboarding' }],
+      });
+    }
+  } catch (error) {
+    console.error('Auth flow error:', error);
+    // On error, go to onboarding to create profile
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Onboarding' }],
+    });
+  }
+};
 
 const MobileVerificationScreen = () => {
   const navigation = useNavigation<NavProp>();
@@ -53,29 +135,25 @@ const MobileVerificationScreen = () => {
   const [pickerVisible, setPickerVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
-  const [showOtpDialog, setShowOtpDialog] =
-    useState(false);
+  const [showOtpDialog, setShowOtpDialog] = useState(false);
 
   const otpRefs = useRef<TextInput[]>([]);
-  const resendIntervalRef = useRef<NodeJS.Timeout | null>(
-    null
-  );
+  const resendIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   /* =====================================================
-     AUTO LOGIN CHECK (SKIP OTP SCREENS)
+     AUTO LOGIN CHECK (APP RELAUNCH CASE)
   ====================================================== */
 
   useEffect(() => {
-    const checkSession = async () => {
-      const user = await getUserSession();
-      if (user) {
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'Onboarding' }],
-        });
+    const checkExistingSession = async () => {
+      const session = await getUserSession();
+      
+      if (session) {
+        await handleSuccessfulAuth(session.id, navigation);
       }
     };
-    checkSession();
+
+    checkExistingSession();
   }, [navigation]);
 
   /* =====================================================
@@ -87,23 +165,23 @@ const MobileVerificationScreen = () => {
     if (cleaned.length <= 10) setPhone(cleaned);
   };
 
-  const startResendTimer = () => {
+  const startResendTimer = useCallback(() => {
     setResendTimer(RESEND_TIMER_SECONDS);
 
-    resendIntervalRef.current &&
+    if (resendIntervalRef.current) {
       clearInterval(resendIntervalRef.current);
+    }
 
     resendIntervalRef.current = setInterval(() => {
       setResendTimer(prev => {
         if (prev <= 1) {
-          resendIntervalRef.current &&
-            clearInterval(resendIntervalRef.current);
+          resendIntervalRef.current && clearInterval(resendIntervalRef.current);
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
-  };
+  }, []);
 
   /* =====================================================
      SEND OTP
@@ -118,7 +196,8 @@ const MobileVerificationScreen = () => {
       setStep('OTP');
       setOtp(Array(OTP_LENGTH).fill(''));
       startResendTimer();
-    } catch {
+    } catch (error) {
+      console.error('Send OTP error:', error);
       Alert.alert(
         'Error',
         'Failed to send OTP. Please try again.'
@@ -126,7 +205,7 @@ const MobileVerificationScreen = () => {
     } finally {
       setLoading(false);
     }
-  }, [phone, loading]);
+  }, [phone, loading, startResendTimer]);
 
   /* =====================================================
      OTP INPUT
@@ -162,13 +241,14 @@ const MobileVerificationScreen = () => {
       setLoading(true);
       const otpValue = otp.join('');
 
-      await verifyOtpAndLogin(phone, otpValue);
+      // 1️⃣ Verify OTP & create session
+      const user = await verifyOtpAndLogin(phone, otpValue);
+      console.log('User authenticated:', user);
 
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Onboarding' }],
-      });
-    } catch {
+      // 2️⃣ Handle post-auth flow
+      await handleSuccessfulAuth(user.id, navigation);
+    } catch (error) {
+      console.error('Verify OTP error:', error);
       Alert.alert('Invalid OTP', 'Please try again.');
     } finally {
       setLoading(false);
@@ -179,7 +259,7 @@ const MobileVerificationScreen = () => {
      RESEND OTP
   ====================================================== */
 
-  const onResendOtpPress = async () => {
+  const onResendOtpPress = useCallback(async () => {
     if (resendTimer > 0 || loading) return;
 
     try {
@@ -187,12 +267,13 @@ const MobileVerificationScreen = () => {
       await loginWithMobile(phone);
       startResendTimer();
       setShowOtpDialog(true);
-    } catch {
+    } catch (error) {
+      console.error('Resend OTP error:', error);
       Alert.alert('Error', 'Failed to resend OTP');
     } finally {
       setLoading(false);
     }
-  };
+  }, [phone, resendTimer, loading, startResendTimer]);
 
   /* =====================================================
      CLEANUP
@@ -200,8 +281,7 @@ const MobileVerificationScreen = () => {
 
   useEffect(() => {
     return () => {
-      resendIntervalRef.current &&
-        clearInterval(resendIntervalRef.current);
+      resendIntervalRef.current && clearInterval(resendIntervalRef.current);
     };
   }, []);
 
@@ -255,9 +335,7 @@ const MobileVerificationScreen = () => {
                       countryCode={countryCode}
                       visible={pickerVisible}
                       onSelect={onSelectCountry}
-                      onClose={() =>
-                        setPickerVisible(false)
-                      }
+                      onClose={() => setPickerVisible(false)}
                     />
                     <Image
                       style={styles.downArrow}
@@ -311,18 +389,11 @@ const MobileVerificationScreen = () => {
                   {otp.map((digit, index) => (
                     <TextInput
                       key={index}
-                      ref={el =>
-                        (otpRefs.current[index] = el!)
-                      }
+                      ref={el => (otpRefs.current[index] = el!)}
                       value={digit}
-                      onChangeText={val =>
-                        onOtpChange(val, index)
-                      }
+                      onChangeText={val => onOtpChange(val, index)}
                       onKeyPress={({ nativeEvent }) =>
-                        onOtpKeyPress(
-                          nativeEvent.key,
-                          index
-                        )
+                        onOtpKeyPress(nativeEvent.key, index)
                       }
                       keyboardType="number-pad"
                       maxLength={1}
@@ -335,7 +406,7 @@ const MobileVerificationScreen = () => {
 
                 <View style={styles.resendRow}>
                   <Text style={styles.resendText}>
-                    Didn’t get the OTP?
+                    Didn't get the OTP?
                   </Text>
                   <TouchableOpacity
                     onPress={onResendOtpPress}
@@ -385,7 +456,7 @@ const MobileVerificationScreen = () => {
               style={styles.modalButton}
               onPress={() => setShowOtpDialog(false)}
             >
-              <Text style={styles.modalButtonText}>
+              <Text style={styles.modableButtonText}>
                 OK
               </Text>
             </TouchableOpacity>
@@ -399,7 +470,7 @@ const MobileVerificationScreen = () => {
 export default MobileVerificationScreen;
 
 /* ================= STYLES ================= */
-
+// Styles remain the same...
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#FFF' },
   scrollContent: { paddingBottom: BOTTOM_IMAGE_HEIGHT + 40 },
@@ -464,7 +535,7 @@ const styles = StyleSheet.create({
     borderColor: '#D1D5DB',
     fontSize: sf(20),
   },
-  resendRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  resendRow: { flexDirection: 'row', justifyContent: 'space-between', marginVertical: sh(15)},
   resendText: { fontSize: sf(15), color: '#6B7280' },
   resendAction: { fontSize: sf(15), color: '#FBBF24' },
   button: {
@@ -498,5 +569,5 @@ const styles = StyleSheet.create({
     borderRadius: s(24),
     marginTop: sh(20),
   },
-  modalButtonText: { fontSize: sf(16), color: '#FFF' },
+  modableButtonText: { fontSize: sf(16), color: '#FFF' },
 });

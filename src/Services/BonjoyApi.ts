@@ -62,6 +62,39 @@ import axios, {
   
   /* ---------- RIDER ---------- */
   
+  export interface RiderUser {
+    id: number;
+    email: string | null;
+    mobile: string;
+    userType: string;
+    status: string;
+  }
+  
+  export interface RiderProfileResult {
+    id: number;
+    userId: number;
+    fullName: string;
+    gender: string;
+    profileImage: string | null;
+    city: string;
+    preferredPaymentMethod: string | null;
+    date_of_birth: string | null;
+    createdAt: string;
+    updatedAt: string;
+    User: RiderUser;
+  }
+  
+  export interface RiderProfileDetailData {
+    results: RiderProfileResult[];
+    userContact: any[]; // Adjust this type if userContact has a specific structure
+  }
+  
+  export interface RiderProfileDetailResponse {
+    success: boolean;
+    message: string;
+    data: RiderProfileDetailData;
+  }
+  
   export interface RiderProfile {
     id: number;
     fullName: string;
@@ -258,7 +291,7 @@ import axios, {
     );
   
   export const getRiderProfileById = (id: number) =>
-    api.get<ApiResponse<RiderProfile>>(
+    api.get<RiderProfileDetailResponse>(
       `/getRiderProfileById/${id}`
     );
   
@@ -320,4 +353,21 @@ import axios, {
     api.get<ApiResponse<RiderProfile[]>>(
       '/getAllRiders'
     );
-  
+
+    export const transformRiderProfileResult = (
+        result: RiderProfileResult
+      ): RiderProfile => ({
+        id: result.id,
+        fullName: result.fullName || '',
+        gender: result.gender || '',
+        dob: result.date_of_birth || '',
+        city: result.city || '',
+        profileImage: result.profileImage || undefined,
+        email: result.User?.email || '',
+        mobile: result.User?.mobile || '',
+        userType: result.User?.userType || '',
+        status: result.User?.status || '',
+        createdAt: result.createdAt || '',
+        // Add other fields if needed
+        remark: result.remark || undefined,
+      });
