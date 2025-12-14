@@ -13,60 +13,117 @@ import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
-import { sh, s, sw, sf } from '../../utils/scale';
+import { sh, s } from '../../utils/scale';
+
+import {
+  getUserSession,
+  getRiderProfile,
+  hasMandatoryProfileData,
+} from '../../Services/BonjoyApi';
 
 const { width, height } = Dimensions.get('window');
 const SCREEN_COUNT = 3;
 
-type NavProp = NativeStackNavigationProp<RootStackParamList, 'Splash'>;
+type NavDecision = 'HOME' | 'ONBOARDING' | 'NONE';
+
+type NavProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'Splash'
+>;
 
 const SplashScreen = () => {
   const navigation = useNavigation<NavProp>();
-
-  // ----------- HOOKS MUST BE TOP-LEVEL ----------
   const slideAnim = useRef(new Animated.Value(0)).current;
 
-  // Status bar colors for each screen
-  const statusBarColors = ['#FFFFFF', '#FCC737', '#FCC737'];
+  // 🔒 Holds navigation decision without causing re-render
+  const navDecisionRef = useRef<NavDecision>('NONE');
 
-  // ------------- EFFECT FOR ANIMATION & STATUSBAR -------------
+  /* =====================================================
+     PARALLEL DATA FETCH (START IMMEDIATELY)
+  ====================================================== */
+
   useEffect(() => {
-    // Set initial StatusBar
-    StatusBar.setBackgroundColor(statusBarColors[0], true);
+    let mounted = true;
+
+    const fetchData = async () => {
+      try {
+        const [session, profile] = await Promise.all([
+          getUserSession(),
+          getRiderProfile(),
+        ]);
+
+        if (!mounted) return;
+
+        if (hasMandatoryProfileData(profile)) {
+          navDecisionRef.current = 'HOME';
+        } else if (session) {
+          navDecisionRef.current = 'ONBOARDING';
+        }
+      } catch {
+        navDecisionRef.current = 'NONE';
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  /* =====================================================
+     SPLASH ANIMATION (CONTROLLED)
+  ====================================================== */
+
+  useEffect(() => {
+    StatusBar.setBackgroundColor('#FFFFFF', true);
     StatusBar.setBarStyle('dark-content', true);
 
-    // Timed status bar updates
-    const timers = [
-      setTimeout(() => {
-        StatusBar.setBackgroundColor(statusBarColors[1], true);
-        StatusBar.setBarStyle('light-content', true);
-      }, 2000),
-      setTimeout(() => {
-        StatusBar.setBackgroundColor(statusBarColors[2], true);
-      }, 4300),
-    ];
-
-    // Slide animation sequence
-    Animated.sequence([
-      Animated.delay(2000),
+    // 1️⃣ First screen (2s)
+    const firstTimer = setTimeout(() => {
       Animated.timing(slideAnim, {
         toValue: -width,
         duration: 300,
         useNativeDriver: true,
-      }),
-      Animated.delay(2000),
-      Animated.timing(slideAnim, {
-        toValue: -width * 2,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start(() => { });
+      }).start(() => {
+        // 2️⃣ Second screen (2s)
+        setTimeout(() => {
+          // 🔴 BEFORE 3RD SCREEN — DECIDE NAVIGATION
+          if (navDecisionRef.current === 'HOME') {
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Home' }],
+            });
+            return;
+          }
 
-    // Cleanup timers
-    return () => timers.forEach(clearTimeout);
-  }, []);
+          if (navDecisionRef.current === 'ONBOARDING') {
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'Onboarding' }],
+            });
+            return;
+          }
 
-  // ------------- RENDERING -------------
+          // 3️⃣ Only slide to 3rd screen if no auto navigation
+          Animated.timing(slideAnim, {
+            toValue: -width * 2,
+            duration: 300,
+            useNativeDriver: true,
+          }).start();
+        }, 2000);
+      });
+    }, 2000);
+
+    return () => {
+      clearTimeout(firstTimer);
+    };
+  }, [navigation]);
+
+  /* =====================================================
+     UI
+  ====================================================== */
+
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
@@ -99,7 +156,7 @@ const SplashScreen = () => {
             </LinearGradient>
           </View>
 
-          {/* 3rd Screen */}
+          {/* 3rd Screen (ONLY if needed) */}
           <View style={styles.screen}>
             <View style={styles.thirdContainer}>
               <View style={styles.thirdImageBox}>
@@ -112,9 +169,7 @@ const SplashScreen = () => {
               <TouchableOpacity
                 activeOpacity={0.8}
                 style={styles.buttonWrapper}
-                onPress={() => {
-                  navigation.replace('Login');
-                }}
+                onPress={() => navigation.replace('Login')}
               >
                 <Image
                   source={require('../../assets/images/splashbutton.png')}
@@ -138,6 +193,8 @@ const SplashScreen = () => {
 
 export default SplashScreen;
 
+/* ================= STYLES ================= */
+
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#FFFFFF' },
   container: { flex: 1, overflow: 'hidden' },
@@ -154,23 +211,50 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     opacity: 0.8,
   },
-  secondSplashBg: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  fullImage: { width: '100%', height: '100%', resizeMode: 'cover' },
-  thirdContainer: { flex: 1, backgroundColor: '#FFFFFF', alignItems: 'center' },
+  secondSplashBg: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  thirdContainer: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+  },
   thirdImageBox: {
     width: '100%',
     height: height * 0.75,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  thirdImage: { width: '100%', height: '100%', resizeMode: 'stretch' },
-  buttonWrapper: { width: '100%', alignItems: 'center' },
-  buttonImage: { width: '85%', height: sh(60), resizeMode: 'contain' },
+  thirdImage: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'stretch',
+  },
+  buttonWrapper: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  buttonImage: {
+    width: '85%',
+    height: sh(60),
+    resizeMode: 'contain',
+  },
   bottomWhite: {
     width: '100%',
     alignItems: 'center',
     marginTop: s(20),
     flex: 1,
   },
-  bottomSmallImg: { width: '70%', height: sh(50), resizeMode: 'contain' },
+  bottomSmallImg: {
+    width: '70%',
+    height: sh(50),
+    resizeMode: 'contain',
+  },
 });

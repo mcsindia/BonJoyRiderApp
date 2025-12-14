@@ -1,6 +1,4 @@
-// src/screens/OnboardingScreen.tsx
-
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -22,7 +20,17 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { getFontFamily } from '../utils/fontFamily';
 import { RootStackParamList } from '../navigation/types';
 
-type NavProp = NativeStackNavigationProp<RootStackParamList, 'Onboarding'>;
+import {
+  updateRiderProfile,
+  getUserSession,
+  getRiderProfile,
+  hasMandatoryProfileData,
+} from '../Services/BonjoyApi';
+
+type NavProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'Onboarding'
+>;
 
 const FIELD_HEIGHT = 44;
 
@@ -48,8 +56,33 @@ const OnboardingScreen = () => {
   const [pinCode, setPinCode] = useState('');
   const [permanentAddress, setPermanentAddress] = useState('');
   const [temporaryAddress, setTemporaryAddress] = useState('');
-
   const [showDOB, setShowDOB] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  /* =====================================================
+     AUTO NAVIGATION IF MANDATORY DATA EXISTS
+  ====================================================== */
+
+  useEffect(() => {
+    const init = async () => {
+      const profile = await getRiderProfile();
+      if (hasMandatoryProfileData(profile)) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Home' }],
+        });
+        return;
+      }
+
+      // Prefill mobile from OTP session
+      const session = await getUserSession();
+      if (session?.mobile) {
+        setMobile(session.mobile);
+      }
+    };
+
+    init();
+  }, [navigation]);
 
   /* ---------------- VALIDATIONS ---------------- */
 
@@ -57,15 +90,20 @@ const OnboardingScreen = () => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const mobileRegex = /^[6-9]\d{9}$/;
 
-  const validateAndSubmit = () => {
+  /* =====================================================
+     SUBMIT HANDLER
+  ====================================================== */
+
+  const validateAndSubmit = async () => {
+    if (loading) return;
+
+    /* ---- MANDATORY FIELD VALIDATION ONLY ---- */
+
     if (!fullName.trim())
       return Alert.alert('Missing Field', 'Full Name is mandatory');
 
     if (!nameRegex.test(fullName))
       return Alert.alert('Invalid Name', 'Name should contain only alphabets');
-
-    if (email && !emailRegex.test(email))
-      return Alert.alert('Invalid Email', 'Please enter a valid email address');
 
     if (!mobile)
       return Alert.alert('Missing Field', 'Mobile number is mandatory');
@@ -79,27 +117,70 @@ const OnboardingScreen = () => {
     if (!city)
       return Alert.alert('Missing Field', 'City is mandatory');
 
-    // ✅ All validation passed
-    navigation.replace('Home');
+    /* ---- OPTIONAL FIELD VALIDATION (ONLY IF FILLED) ---- */
+
+    if (email && !emailRegex.test(email))
+      return Alert.alert('Invalid Email', 'Please enter a valid email address');
+
+    try {
+      setLoading(true);
+
+      const session = await getUserSession();
+      if (!session) {
+        Alert.alert('Session Expired', 'Please login again');
+        return;
+      }
+
+      const formData = new FormData();
+
+      // Mandatory fields
+      formData.append('fullName', fullName);
+      formData.append('mobile', mobile);
+      formData.append('city', city);
+
+      // Optional fields (send only if filled)
+      if (gender) formData.append('gender', gender);
+      if (dob)
+        formData.append(
+          'dob',
+          dob.toISOString().split('T')[0]
+        );
+      if (email) formData.append('email', email);
+      if (pinCode) formData.append('pinCode', pinCode);
+      if (permanentAddress)
+        formData.append('permanentAddress', permanentAddress);
+      if (temporaryAddress)
+        formData.append('temporaryAddress', temporaryAddress);
+
+      formData.append('status', 'Active');
+      formData.append('remark', 'Onboarding completed');
+
+      await updateRiderProfile(session.id, formData);
+
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Home' }],
+      });
+    } catch {
+      Alert.alert('Error', 'Failed to update profile. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  /* ---------------- UI ---------------- */
+  /* ---------------- UI (UNCHANGED) ---------------- */
 
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container}>
-        {/* HEADER IMAGE */}
         <Image
           source={require('../assets/images/profile_bg.png')}
           style={styles.headerBg}
         />
 
-        {/* HEADER TEXT */}
         <Text style={styles.headerText}>Complete Your Profile</Text>
 
-        {/* CARD */}
         <View style={styles.card}>
-          {/* Mandatory Row */}
           <View style={styles.mandatoryRow}>
             <View style={styles.dot} />
             <Text style={styles.mandatoryText}>mandatory</Text>
@@ -116,7 +197,7 @@ const OnboardingScreen = () => {
             />
           </View>
 
-          {/* Gender */}
+          {/* Gender (Optional) */}
           <TouchableOpacity
             style={styles.commonWrapper}
             onPress={() =>
@@ -138,7 +219,7 @@ const OnboardingScreen = () => {
             </View>
           </TouchableOpacity>
 
-          {/* DOB */}
+          {/* DOB (Optional) */}
           <TouchableOpacity
             style={styles.commonWrapper}
             onPress={() => setShowDOB(true)}
@@ -151,7 +232,7 @@ const OnboardingScreen = () => {
             </View>
           </TouchableOpacity>
 
-          {/* Email */}
+          {/* Email (Optional) */}
           <View style={styles.commonWrapper}>
             <TextInput
               style={styles.input}
@@ -174,9 +255,7 @@ const OnboardingScreen = () => {
                 style={styles.mobileInput}
                 placeholder="Mobile No."
                 value={mobile}
-                onChangeText={setMobile}
-                keyboardType="number-pad"
-                maxLength={10}
+                editable={false}
                 placeholderTextColor="#9CA3AF"
               />
             </View>
@@ -232,7 +311,7 @@ const OnboardingScreen = () => {
             </View>
           </TouchableOpacity>
 
-          {/* PIN */}
+          {/* PIN (Optional) */}
           <View style={styles.commonWrapper}>
             <TextInput
               style={styles.input}
@@ -245,7 +324,7 @@ const OnboardingScreen = () => {
             />
           </View>
 
-          {/* Permanent Address */}
+          {/* Permanent Address (Optional) */}
           <View style={styles.commonWrapper}>
             <TextInput
               style={[styles.input, styles.textArea]}
@@ -257,7 +336,7 @@ const OnboardingScreen = () => {
             />
           </View>
 
-          {/* Temporary Address */}
+          {/* Temporary Address (Optional) */}
           <View style={styles.commonWrapper}>
             <TextInput
               style={[styles.input, styles.textArea]}
@@ -269,30 +348,21 @@ const OnboardingScreen = () => {
             />
           </View>
 
-          {/* Buttons */}
           <View style={styles.buttonRow}>
-            <TouchableOpacity style={styles.saveBtn} onPress={validateAndSubmit}>
-              <Text style={styles.saveText}>Save & Continue</Text>
-            </TouchableOpacity>
             <TouchableOpacity
-              style={styles.clearBtn}
-              onPress={() => {
-                setFullName('');
-                setEmail('');
-                setMobile('');
-                setStateVal('');
-                setCity('');
-              }}
+              style={styles.saveBtn}
+              onPress={validateAndSubmit}
             >
-              <Text style={styles.clearText}>Clear</Text>
+              <Text style={styles.saveText}>
+                {loading ? 'Saving...' : 'Save & Continue'}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
 
-      {/* DATE PICKER */}
-      {showDOB && (
-        Platform.OS === 'android' ? (
+      {showDOB &&
+        (Platform.OS === 'android' ? (
           <DateTimePicker
             value={dob || new Date()}
             mode="date"
@@ -317,23 +387,18 @@ const OnboardingScreen = () => {
               </TouchableOpacity>
             </View>
           </Modal>
-        )
-      )}
+        ))}
     </SafeAreaView>
   );
 };
 
 export default OnboardingScreen;
 
-
+/* ================= STYLES (UNCHANGED) ================= */
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#F8FAFC' },
-
-  container: {
-    paddingBottom: 80,
-  },
-
+  container: { paddingBottom: 80 },
   headerBg: {
     width: '100%',
     height: 150,
@@ -341,7 +406,6 @@ const styles = StyleSheet.create({
     top: 0,
     resizeMode: 'stretch',
   },
-
   headerText: {
     marginTop: 50,
     fontSize: 20,
@@ -349,7 +413,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#111827',
   },
-
   card: {
     marginTop: 20,
     backgroundColor: '#FFF',
@@ -358,13 +421,11 @@ const styles = StyleSheet.create({
     elevation: 5,
     marginHorizontal: 20,
   },
-
   mandatoryRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 16,
   },
-
   dot: {
     width: 8,
     height: 8,
@@ -372,24 +433,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#EF4444',
     marginRight: 8,
   },
-
   mandatoryText: {
     fontSize: 14,
     color: '#6B7280',
   },
-
   requiredWrapper: {
     borderRightWidth: 4,
     borderRightColor: '#FF8484',
     borderRadius: 10,
     marginBottom: 12,
-    backgroundColor: '#FF8484'
+    backgroundColor: '#FF8484',
   },
-
-  commonWrapper: {
-    marginBottom: 12,
-  },
-
+  commonWrapper: { marginBottom: 12 },
   input: {
     height: FIELD_HEIGHT,
     borderWidth: 1,
@@ -399,7 +454,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     backgroundColor: '#F9FAFB',
   },
-
   dropdown: {
     height: FIELD_HEIGHT,
     borderWidth: 1,
@@ -411,16 +465,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-
-  valueText: {
-    fontSize: 15,
-    color: '#111827',
-  },
-
-  placeholder: {
-    color: '#9CA3AF',
-  },
-
+  valueText: { fontSize: 15, color: '#111827' },
+  placeholder: { color: '#9CA3AF' },
   mobileRow: {
     height: FIELD_HEIGHT,
     flexDirection: 'row',
@@ -431,56 +477,23 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 12,
   },
-
   flag: { width: 22, height: 14, marginRight: 8 },
-
-  code: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginRight: 8,
-  },
-
-  mobileInput: {
-    flex: 1,
-    fontSize: 15,
-  },
-
+  code: { fontSize: 15, fontWeight: '600', marginRight: 8 },
+  mobileInput: { flex: 1, fontSize: 15 },
   textArea: {
     height: 80,
     paddingTop: 12,
     textAlignVertical: 'top',
   },
-
-  buttonRow: {
-    flexDirection: 'row',
-    marginTop: 24,
-  },
-
+  buttonRow: { flexDirection: 'row', marginTop: 24 },
   saveBtn: {
     flex: 1,
     backgroundColor: '#111827',
     paddingVertical: 12,
     borderRadius: 14,
-    marginRight: 8,
   },
-
-  clearBtn: {
-    flex: 1,
-    backgroundColor: '#E5E7EB',
-    paddingVertical: 12,
-    borderRadius: 14,
-    marginLeft: 8,
-  },
-
   saveText: {
     color: '#FFF',
-    fontSize: 16,
-    textAlign: 'center',
-    fontWeight: '600',
-  },
-
-  clearText: {
-    color: '#111827',
     fontSize: 16,
     textAlign: 'center',
     fontWeight: '600',

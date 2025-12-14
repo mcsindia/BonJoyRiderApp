@@ -1,5 +1,9 @@
-// src/screens/MobileVerificationScreen.tsx
-import React, { useState, useCallback, useRef } from 'react';
+import React, {
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+} from 'react';
 import {
   View,
   Text,
@@ -10,77 +14,129 @@ import {
   SafeAreaView,
   ScrollView,
   Modal,
+  Alert,
 } from 'react-native';
 import CountryPicker from 'react-native-country-picker-modal';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+
 import { RootStackParamList } from '../navigation/types';
 import { getFontFamily } from '../utils/fontFamily';
 import { s, sf, sh, sw } from '../utils/scale';
-import axios from 'axios';
-import https from 'https';
+
+// ✅ APIs
+import {
+  loginWithMobile,
+  verifyOtpAndLogin,
+  getUserSession,
+} from '../Services/BonjoyApi';
 
 const BOTTOM_IMAGE_HEIGHT = 200;
 const OTP_LENGTH = 4;
-type NavProp = NativeStackNavigationProp<RootStackParamList, 'Splash'>;
+const RESEND_TIMER_SECONDS = 60;
+
+type NavProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'Splash'
+>;
 
 const MobileVerificationScreen = () => {
+  const navigation = useNavigation<NavProp>();
+
   const [step, setStep] = useState<'PHONE' | 'OTP'>('PHONE');
   const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
-  const [showOtpDialog, setShowOtpDialog] = useState(false);
-  const [countryCode, setCountryCode] = useState('IN'); // Default: India
+  const [otp, setOtp] = useState<string[]>(
+    Array(OTP_LENGTH).fill('')
+  );
+  const [countryCode, setCountryCode] = useState('IN');
   const [callingCode, setCallingCode] = useState('91');
   const [pickerVisible, setPickerVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
+  const [showOtpDialog, setShowOtpDialog] =
+    useState(false);
 
-  const navigation = useNavigation<NavProp>();
   const otpRefs = useRef<TextInput[]>([]);
+  const resendIntervalRef = useRef<NodeJS.Timeout | null>(
+    null
+  );
 
-  // Only allow digits
+  /* =====================================================
+     AUTO LOGIN CHECK (SKIP OTP SCREENS)
+  ====================================================== */
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const user = await getUserSession();
+      if (user) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Onboarding' }],
+        });
+      }
+    };
+    checkSession();
+  }, [navigation]);
+
+  /* =====================================================
+     HELPERS
+  ====================================================== */
+
   const handlePhoneChange = (text: string) => {
     const cleaned = text.replace(/[^0-9]/g, '');
-    if (cleaned.length <= 10) {
-      setPhone(cleaned);
-    }
+    if (cleaned.length <= 10) setPhone(cleaned);
   };
 
+  const startResendTimer = () => {
+    setResendTimer(RESEND_TIMER_SECONDS);
 
+    resendIntervalRef.current &&
+      clearInterval(resendIntervalRef.current);
 
-  // axios.get('https://bonjoy.in:5000/api/v1/getAllRiderProfiles?page=2&limit=10',
-  //   {
-  //     httpsAgent: new https.Agent({ rejectUnauthorized: false }),
-  //   }
-  // )
-  // .then(res => console.log(res.data))
-  // .catch(err => console.log(err));
+    resendIntervalRef.current = setInterval(() => {
+      setResendTimer(prev => {
+        if (prev <= 1) {
+          resendIntervalRef.current &&
+            clearInterval(resendIntervalRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
 
-  // const response = axios.post(
-  //   'https://bonjoy.in:5000/api/v1/loginWithMobile',
-  //   {
-  //     "mobile": '7648845208',
-  //   },
-  //   {
-  //     headers: {
-  //       'Content-Type': 'application/json',
-  //     },
-  //     timeout: 15000,
-  //   }
-  // );
+  /* =====================================================
+     SEND OTP
+  ====================================================== */
 
+  const onNextPress = useCallback(async () => {
+    if (phone.length !== 10 || loading) return;
 
-  // console.log('✅ OTP API Responses:', response.data);
-  
-  const onNextPress = useCallback(() => {
-    if (phone.length === 10) {
+    try {
+      setLoading(true);
+      await loginWithMobile(phone);
       setStep('OTP');
+      setOtp(Array(OTP_LENGTH).fill(''));
+      startResendTimer();
+    } catch {
+      Alert.alert(
+        'Error',
+        'Failed to send OTP. Please try again.'
+      );
+    } finally {
+      setLoading(false);
     }
-  }, [phone]);
+  }, [phone, loading]);
+
+  /* =====================================================
+     OTP INPUT
+  ====================================================== */
 
   const onOtpChange = (value: string, index: number) => {
     const digit = value.replace(/[^0-9]/g, '').slice(0, 1);
-    const newOtp = [...otp];
-    newOtp[index] = digit;
-    setOtp(newOtp);
+    const updated = [...otp];
+    updated[index] = digit;
+    setOtp(updated);
 
     if (digit && index < OTP_LENGTH - 1) {
       otpRefs.current[index + 1]?.focus();
@@ -93,19 +149,71 @@ const MobileVerificationScreen = () => {
     }
   };
 
-  const isOtpComplete = otp.every(digit => digit !== '');
+  const isOtpComplete = otp.every(d => d !== '');
 
-  const onVerifyPress = () => {
-    if (isOtpComplete) {
-      navigation.navigate('Onboarding');
+  /* =====================================================
+     VERIFY OTP
+  ====================================================== */
+
+  const onVerifyPress = async () => {
+    if (!isOtpComplete || loading) return;
+
+    try {
+      setLoading(true);
+      const otpValue = otp.join('');
+
+      await verifyOtpAndLogin(phone, otpValue);
+
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Onboarding' }],
+      });
+    } catch {
+      Alert.alert('Invalid OTP', 'Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
+
+  /* =====================================================
+     RESEND OTP
+  ====================================================== */
+
+  const onResendOtpPress = async () => {
+    if (resendTimer > 0 || loading) return;
+
+    try {
+      setLoading(true);
+      await loginWithMobile(phone);
+      startResendTimer();
+      setShowOtpDialog(true);
+    } catch {
+      Alert.alert('Error', 'Failed to resend OTP');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /* =====================================================
+     CLEANUP
+  ====================================================== */
+
+  useEffect(() => {
+    return () => {
+      resendIntervalRef.current &&
+        clearInterval(resendIntervalRef.current);
+    };
+  }, []);
 
   const onSelectCountry = (country: any) => {
     setCountryCode(country.cca2);
     setCallingCode(country.callingCode[0] || '91');
     setPickerVisible(false);
   };
+
+  /* =====================================================
+     UI
+  ====================================================== */
 
   return (
     <View style={styles.root}>
@@ -115,7 +223,6 @@ const MobileVerificationScreen = () => {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* HEADER */}
           <View style={styles.headerBg}>
             <Image
               source={require('../assets/images/scoorter.png')}
@@ -124,18 +231,19 @@ const MobileVerificationScreen = () => {
             />
           </View>
 
-          {/* CARD */}
           <View style={styles.card}>
             {step === 'PHONE' && (
               <>
-                <Text style={styles.title}>Enter Mobile number for verification</Text>
-
-                <Text style={styles.subtitle}>
-                  This number will be used for ride-related {'\n'}communication. You
-                  will receive an SMS code for verification.
+                <Text style={styles.title}>
+                  Enter Mobile number for verification
                 </Text>
 
-                {/* PHONE INPUT - WITH COUNTRY PICKER */}
+                <Text style={styles.subtitle}>
+                  This number will be used for ride-related{'\n'}
+                  communication. You will receive an SMS
+                  code for verification.
+                </Text>
+
                 <View style={styles.phoneInputContainer}>
                   <TouchableOpacity
                     style={styles.countrySelector}
@@ -145,24 +253,24 @@ const MobileVerificationScreen = () => {
                       withFlag
                       withEmoji
                       countryCode={countryCode}
-                      withCallingCode={false}
-                      withFilter
                       visible={pickerVisible}
                       onSelect={onSelectCountry}
-                      onClose={() => setPickerVisible(false)}
-                      theme={{
-                        fontFamily: getFontFamily('regular'),
-                      }}
+                      onClose={() =>
+                        setPickerVisible(false)
+                      }
                     />
-                    <Image style={styles.downArrow}
-                    source={require('../assets/icons/down_arrow.png')}
+                    <Image
+                      style={styles.downArrow}
+                      source={require('../assets/icons/down_arrow.png')}
                     />
                   </TouchableOpacity>
 
                   <View style={styles.divider} />
 
                   <View style={styles.codeAndInput}>
-                    <Text style={styles.callingCode}>+{callingCode}</Text>
+                    <Text style={styles.callingCode}>
+                      +{callingCode}
+                    </Text>
                     <TextInput
                       value={phone}
                       onChangeText={handlePhoneChange}
@@ -176,50 +284,82 @@ const MobileVerificationScreen = () => {
                 </View>
 
                 <TouchableOpacity
-                  style={[styles.button, { opacity: phone.length === 10 ? 1 : 0.6 }]}
+                  style={[
+                    styles.button,
+                    { opacity: phone.length === 10 ? 1 : 0.6 },
+                  ]}
                   onPress={onNextPress}
-                  disabled={phone.length !== 10}
+                  disabled={phone.length !== 10 || loading}
                 >
-                  <Text style={styles.buttonText}>Next</Text>
+                  <Text style={styles.buttonText}>
+                    {loading ? 'Please wait...' : 'Next'}
+                  </Text>
                 </TouchableOpacity>
               </>
             )}
 
             {step === 'OTP' && (
               <>
-                <Text style={styles.title}>Log in using the OTP sent to</Text>
-                <Text style={styles.title}>+{callingCode}******{phone.slice(-4)}</Text>
+                <Text style={styles.title}>
+                  Log in using the OTP sent to
+                </Text>
+                <Text style={styles.title}>
+                  +{callingCode}******{phone.slice(-4)}
+                </Text>
 
                 <View style={styles.otpRow}>
                   {otp.map((digit, index) => (
                     <TextInput
                       key={index}
-                      ref={el => (otpRefs.current[index] = el!)}
+                      ref={el =>
+                        (otpRefs.current[index] = el!)
+                      }
                       value={digit}
-                      onChangeText={val => onOtpChange(val, index)}
-                      onKeyPress={({ nativeEvent }) => onOtpKeyPress(nativeEvent.key, index)}
+                      onChangeText={val =>
+                        onOtpChange(val, index)
+                      }
+                      onKeyPress={({ nativeEvent }) =>
+                        onOtpKeyPress(
+                          nativeEvent.key,
+                          index
+                        )
+                      }
                       keyboardType="number-pad"
                       maxLength={1}
                       textAlign="center"
                       style={styles.otpBox}
-                      caretHidden={true}
+                      caretHidden
                     />
                   ))}
                 </View>
 
                 <View style={styles.resendRow}>
-                  <Text style={styles.resendText}>Didn’t get the OTP?</Text>
-                  <TouchableOpacity onPress={() => setShowOtpDialog(true)}>
-                    <Text style={styles.resendAction}>Resend again</Text>
+                  <Text style={styles.resendText}>
+                    Didn’t get the OTP?
+                  </Text>
+                  <TouchableOpacity
+                    onPress={onResendOtpPress}
+                    disabled={resendTimer > 0}
+                  >
+                    <Text style={styles.resendAction}>
+                      {resendTimer > 0
+                        ? `Resend in ${resendTimer}s`
+                        : 'Resend again'}
+                    </Text>
                   </TouchableOpacity>
                 </View>
 
                 <TouchableOpacity
-                  style={[styles.button, { opacity: isOtpComplete ? 1 : 0.6 }]}
+                  style={[
+                    styles.button,
+                    { opacity: isOtpComplete ? 1 : 0.6 },
+                  ]}
                   onPress={onVerifyPress}
-                  disabled={!isOtpComplete}
+                  disabled={!isOtpComplete || loading}
                 >
-                  <Text style={styles.buttonText}>Verify</Text>
+                  <Text style={styles.buttonText}>
+                    {loading ? 'Verifying...' : 'Verify'}
+                  </Text>
                 </TouchableOpacity>
               </>
             )}
@@ -227,7 +367,6 @@ const MobileVerificationScreen = () => {
         </ScrollView>
       </SafeAreaView>
 
-      {/* FIXED BOTTOM IMAGE */}
       <View pointerEvents="none" style={styles.absoluteBottom}>
         <Image
           source={require('../assets/images/bottombg.png')}
@@ -236,16 +375,19 @@ const MobileVerificationScreen = () => {
         />
       </View>
 
-      {/* OTP Resent Modal */}
-      <Modal visible={showOtpDialog} transparent animationType="fade">
+      <Modal visible={showOtpDialog} transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalText}>OTP sent. It will reach you shortly</Text>
+            <Text style={styles.modalText}>
+              OTP sent. It will reach you shortly
+            </Text>
             <TouchableOpacity
               style={styles.modalButton}
               onPress={() => setShowOtpDialog(false)}
             >
-              <Text style={styles.modalButtonText}>OK</Text>
+              <Text style={styles.modalButtonText}>
+                OK
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -255,6 +397,8 @@ const MobileVerificationScreen = () => {
 };
 
 export default MobileVerificationScreen;
+
+/* ================= STYLES ================= */
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#FFF' },
@@ -298,47 +442,20 @@ const styles = StyleSheet.create({
     borderColor: '#B4CBFF',
     marginBottom: sh(24),
     backgroundColor: '#F8FAFC',
-    paddingStart: sw(10)
+    paddingStart: sw(10),
   },
-  countrySelector: {
-    flexDirection: 'row',
-    alignItems: 'center'
-  },
-  downArrow: {
-    fontSize: sf(14),
-    color: '#6B7280',
-    marginLeft: sw(4),
-  },
+  countrySelector: { flexDirection: 'row', alignItems: 'center' },
+  downArrow: { marginLeft: sw(4) },
   divider: {
     width: 1,
     height: sh(24),
     backgroundColor: '#D1D5DB',
     marginHorizontal: sh(12),
   },
-  codeAndInput: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  callingCode: {
-    fontSize: sf(18),
-    fontWeight: '500',
-    color: '#0F172A',
-    fontFamily: getFontFamily('regular')
-  },
-  phoneInput: {
-    flex: 1,
-    fontSize: sf(18),
-    color: '#0F172A',
-    paddingVertical: 0,
-    fontFamily: getFontFamily('regular'),
-    textAlignVertical: 'center'
-  },
-  otpRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: sh(24),
-  },
+  codeAndInput: { flex: 1, flexDirection: 'row', alignItems: 'center' },
+  callingCode: { fontSize: sf(18), color: '#0F172A' },
+  phoneInput: { flex: 1, fontSize: sf(18), color: '#0F172A' },
+  otpRow: { flexDirection: 'row', justifyContent: 'space-between' },
   otpBox: {
     width: sw(56),
     height: sh(56),
@@ -346,19 +463,10 @@ const styles = StyleSheet.create({
     borderWidth: 1.2,
     borderColor: '#D1D5DB',
     fontSize: sf(20),
-    textAlign: 'center',
-    fontFamily: getFontFamily('semiBold'),
   },
-  resendRow: { flexDirection: 'row', marginBottom: 24, flex: 1, justifyContent: 'space-between' },
-  resendText: {
-    fontSize: sf(15),
-    color: '#6B7280'
-  },
-  resendAction: {
-    fontSize: sf(15),
-    color: '#FBBF24',
-    fontFamily: getFontFamily('semiBold')
-  },
+  resendRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  resendText: { fontSize: sf(15), color: '#6B7280' },
+  resendAction: { fontSize: sf(15), color: '#FBBF24' },
   button: {
     height: sh(56),
     backgroundColor: '#0F172A',
@@ -366,17 +474,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  buttonText: {
-    fontSize: sf(18),
-    color: '#FFF',
-    fontFamily: getFontFamily('semiBold'),
-  },
-  absoluteBottom: {
-    position: 'absolute',
-    bottom: 0,
-    width: '100%',
-    height: BOTTOM_IMAGE_HEIGHT,
-  },
+  buttonText: { fontSize: sf(18), color: '#FFF' },
+  absoluteBottom: { position: 'absolute', bottom: 0, width: '100%' },
   bottomImage: { width: '100%', height: '100%' },
   modalOverlay: {
     flex: 1,
@@ -390,25 +489,14 @@ const styles = StyleSheet.create({
     borderRadius: s(24),
     padding: s(24),
     alignItems: 'center',
-    elevation: 8,
   },
-  modalText: {
-    fontSize: sf(18),
-    color: '#4B5563',
-    textAlign: 'center',
-    marginBottom: sh(20),
-    lineHeight: sh(24),
-    fontFamily: getFontFamily('regular'),
-  },
+  modalText: { fontSize: sf(18), color: '#4B5563' },
   modalButton: {
     backgroundColor: '#1E293B',
     paddingHorizontal: sw(36),
     paddingVertical: sh(12),
     borderRadius: s(24),
+    marginTop: sh(20),
   },
-  modalButtonText: {
-    fontSize: sf(16),
-    color: '#FFF',
-    fontFamily: getFontFamily('semiBold'),
-  },
+  modalButtonText: { fontSize: sf(16), color: '#FFF' },
 });
