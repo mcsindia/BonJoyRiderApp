@@ -8,6 +8,7 @@ import HomeStack from './HomeStack';
 import ProfileScreen from '../screens/HomeScreenContent/ProfileScreen';
 
 import { s, sf, sh, sw } from '../utils/scale';
+import EditProfilePage from '../screens/HomeScreenContent/EditProfilePage';
 // tab icons
 const homeIcon = require('../assets/tab-icons/home.png');
 const bikeIcon = require('../assets/tab-icons/bike.png');
@@ -58,6 +59,8 @@ const BottomTabNavigator = () => {
       <Tab.Screen name="Profile" component={ProfileScreen} />
       <Tab.Screen name="Wallet" component={ProfileScreen} />
       <Tab.Screen name="Support" component={ProfileScreen} />
+      <Tab.Screen name="EditProfile" component={EditProfilePage} />
+      
     </Tab.Navigator>
   );
 };
