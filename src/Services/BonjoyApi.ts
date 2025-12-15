@@ -18,6 +18,7 @@ const TIMEOUT = 15000;
 const AUTH_TOKEN_KEY = 'AUTH_TOKEN';
 const USER_KEY = 'USER_SESSION';
 const RIDER_PROFILE_KEY = 'RIDER_PROFILE';
+const USER_CONTACTS_KEY = 'USER_CONTACTS';
 
 /* ======================================================
    DATA MODELS (TS Data Classes)
@@ -71,7 +72,7 @@ export interface RiderUser {
 }
 
 export interface RiderProfileResult {
-  id: number;
+  profile_id: number;
   userId: number;
   fullName: string;
   gender: string;
@@ -86,7 +87,7 @@ export interface RiderProfileResult {
 
 export interface RiderProfileDetailData {
   results: RiderProfileResult[];
-  userContact: any[];
+  userContact: UserContact[];
 }
 
 export interface RiderProfileDetailResponse {
@@ -99,7 +100,7 @@ export interface RiderProfile {
   id: number;
   fullName: string;
   gender: string;
-  date_of_birth: string;
+  dob: string;
   city: string;
   profileImage?: string;
   email: string;
@@ -125,6 +126,27 @@ export interface GetAllRiderProfilesResponse {
   total: number;
 }
 
+/* ---------- USER CONTACTS ---------- */
+
+export interface UserContact {
+  contact_id: number;
+  userId: number;
+  contactType?: string; // For create/update
+  relationship?: string; // For update API
+  contactName: string;
+  contactNumber: string;
+  address?: string;
+  is_primary?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface UserContactResponse {
+  success: boolean;
+  message: string;
+  data: UserContact[];
+}
+
 /* ======================================================
    SESSION HELPERS
 ====================================================== */
@@ -133,6 +155,7 @@ export const saveSession = async (
   token: string,
   user: UserSession
 ) => {
+  console.log("token", token )
   await AsyncStorage.multiSet([
     [AUTH_TOKEN_KEY, token],
     [USER_KEY, JSON.stringify(user)],
@@ -144,6 +167,7 @@ export const clearSession = async () => {
     AUTH_TOKEN_KEY,
     USER_KEY,
     RIDER_PROFILE_KEY,
+    USER_CONTACTS_KEY,
   ]);
 };
 
@@ -176,6 +200,30 @@ export const getRiderProfile = async (): Promise<RiderProfile | null> => {
     return JSON.parse(data) as RiderProfile;
   } catch {
     return null;
+  }
+};
+
+/* ======================================================
+   USER CONTACTS LOCAL STORAGE
+====================================================== */
+
+export const saveUserContacts = async (contacts: UserContact[]) => {
+  if (!contacts || contacts.length === 0) {
+    await AsyncStorage.removeItem(USER_CONTACTS_KEY);
+    return;
+  }
+  
+  await AsyncStorage.setItem(USER_CONTACTS_KEY, JSON.stringify(contacts));
+};
+
+export const getUserContacts = async (): Promise<UserContact[]> => {
+  const data = await AsyncStorage.getItem(USER_CONTACTS_KEY);
+  if (!data) return [];
+  
+  try {
+    return JSON.parse(data) as UserContact[];
+  } catch {
+    return [];
   }
 };
 
@@ -242,7 +290,7 @@ export const logout = async () => {
 };
 
 /* ======================================================
-   RIDER PROFILE APIS - UPDATED
+   RIDER PROFILE APIS
 ====================================================== */
 
 export const getAllRiderProfiles = (page: number, limit: number) =>
@@ -265,16 +313,11 @@ export const createRiderProfile = async (formData: FormData): Promise<RiderProfi
   return profile;
 };
 
-/**
- * ✅ CRITICAL FIX: Update Rider Profile
- * - Uses USER ID (not rider ID) in URL
- * - Uses existingProfile?.id as riderId in formData if available
- */
 export const updateRiderProfile = async (userId: number, formData: FormData): Promise<RiderProfile> => {
   console.log(`📤 Updating profile for user ID: ${userId}`);
   
   const response = await api.put<CreateRiderProfileResponse>(
-    `/updateRiderProfile/${userId}`,  // Use USER ID here
+    `/updateRiderProfile/${userId}`,
     formData,
     {
       headers: { 'Content-Type': 'multipart/form-data' },
@@ -309,7 +352,7 @@ export const updateRiderProfile = async (userId: number, formData: FormData): Pr
     // If we can't fetch, but update was successful, return a minimal profile
     const session = await getUserSession();
     const minimalProfile: RiderProfile = {
-      id: 0, // Will be updated when fetched
+      id: 0,
       fullName: formData.get('fullName') as string || '',
       gender: formData.get('gender') as string || '',
       dob: formData.get('date_of_birth') as string || '',
@@ -325,7 +368,6 @@ export const updateRiderProfile = async (userId: number, formData: FormData): Pr
     return minimalProfile;
   }
 
-  // We have data in response
   const updatedProfile = response.data.data[0];
   await saveRiderProfile(updatedProfile);
   return updatedProfile;
@@ -338,7 +380,7 @@ export const getAllRiders = () =>
   api.get<ApiResponse<RiderProfile[]>>('/getAllRiders');
 
 export const transformRiderProfileResult = (result: RiderProfileResult): RiderProfile => ({
-  id: result.id,
+  profile_id: result.id,
   fullName: result.fullName || '',
   gender: result.gender || '',
   dob: result.date_of_birth || '',
@@ -350,3 +392,159 @@ export const transformRiderProfileResult = (result: RiderProfileResult): RiderPr
   status: result.User?.status || '',
   createdAt: result.createdAt || '',
 });
+
+/* ======================================================
+   USER CONTACTS APIS
+====================================================== */
+
+/**
+ * Create a new user contact
+ * Body: { userId, contactType, contactName, contactNumber }
+ */
+export const createUserContact = async (
+  userId: number,
+  contactType: string,
+  contactName: string,
+  contactNumber: string,
+  is_primary: number,
+  relationship: string
+): Promise<UserContact> => {
+  console.log(userId, contactName, contactType, contactNumber, is_primary, relationship)
+  const response = await api.post<UserContactResponse>('/createUserContact', {
+    userId,
+    contactType,
+    contactName,
+    contactNumber,
+    is_primary,
+    relationship
+  });
+
+  if (!response.data.success || !response.data.data?.[0]) {
+    throw new Error(response.data.message || 'Failed to create contact');
+  }
+
+  const newContact = response.data.data[0];
+  
+  // Update local storage
+  const existingContacts = await getUserContacts();
+  const updatedContacts = [...existingContacts, newContact];
+  await saveUserContacts(updatedContacts);
+  
+  return newContact;
+};
+
+/**
+ * Get all user contacts for the current user
+ */
+export const getAllUserContacts = async (): Promise<UserContact[]> => {
+  const response = await api.get<UserContactResponse>('/getAllUserContacts');
+  
+  if (!response.data.success) {
+    throw new Error(response.data.message || 'Failed to fetch contacts');
+  }
+
+  const contacts = response.data.data || [];
+  
+  // Save to local storage
+  await saveUserContacts(contacts);
+  
+  return contacts;
+};
+
+/**
+ * Get user contact by ID
+ */
+export const getUserContactById = async (id: number): Promise<UserContact> => {
+  const response = await api.get<UserContactResponse>(`/getUserContactById/${id}`);
+  
+  if (!response.data.success || !response.data.data?.[0]) {
+    throw new Error(response.data.message || 'Contact not found');
+  }
+
+  return response.data.data[0];
+};
+
+/**
+ * Update user contact
+ * Body: { relationship, address, is_primary, contactName, contactNumber }
+ */
+export const updateUserContact = async (
+  id: number,
+  data: {
+    relationship?: string;
+    address?: string;
+    is_primary?: number;
+    contactName?: string;
+    contactNumber?: string;
+  }
+): Promise<UserContact> => {
+  const response = await api.put<UserContactResponse>(`/updateUserContact/${id}`, data);
+  
+  if (!response.data.success || !response.data.data?.[0]) {
+    throw new Error(response.data.message || 'Failed to update contact');
+  }
+
+  const updatedContact = response.data.data[0];
+  
+  // Update local storage
+  const existingContacts = await getUserContacts();
+  const updatedContacts = existingContacts.map(contact =>
+    contact.id === id ? updatedContact : contact
+  );
+  await saveUserContacts(updatedContacts);
+  
+  return updatedContact;
+};
+
+/**
+ * Delete user contact
+ */
+export const deleteUserContact = async (id: number): Promise<void> => {
+  const response = await api.delete<ApiResponse<null>>(`/deleteUserContact/${id}`);
+  
+  if (!response.data.success) {
+    throw new Error(response.data.message || 'Failed to delete contact');
+  }
+
+  // Update local storage
+  const existingContacts = await getUserContacts();
+  const updatedContacts = existingContacts.filter(contact => contact.id !== id);
+  await saveUserContacts(updatedContacts);
+};
+
+/* ======================================================
+   HELPER FUNCTIONS FOR CONTACTS
+====================================================== */
+
+/**
+ * Get emergency contacts for current user
+ */
+export const getEmergencyContacts = async (): Promise<UserContact[]> => {
+  const allContacts = await getUserContacts();
+  return allContacts.filter(contact => 
+    contact.contactType === 'emergency' || contact.relationship === 'emergency'
+  );
+};
+
+/**
+ * Get primary contact for current user
+ */
+export const getPrimaryContact = async (): Promise<UserContact | null> => {
+  const allContacts = await getUserContacts();
+  return allContacts.find(contact => contact.is_primary === 1) || null;
+};
+
+/**
+ * Sync contacts from server to local storage
+ */
+export const syncUserContacts = async (): Promise<UserContact[]> => {
+  try {
+    const contacts = await getAllUserContacts();
+    await saveUserContacts(contacts);
+    return contacts;
+  } catch (error) {
+    console.error('Failed to sync contacts:', error);
+    // Return local contacts as fallback
+    return await getUserContacts();
+  }
+};

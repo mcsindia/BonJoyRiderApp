@@ -83,6 +83,7 @@ const handleSuccessfulAuth = async (
     const profile = await extractRiderProfile(userId);
     
     if (profile) {
+      console.log("sanj 2", profile)
       await saveRiderProfile(profile);
       
       const shouldGoToHome = hasMandatoryProfileData(profile);

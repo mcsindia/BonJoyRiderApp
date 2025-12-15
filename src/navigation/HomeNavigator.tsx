@@ -59,7 +59,6 @@ const BottomTabNavigator = () => {
       <Tab.Screen name="Profile" component={ProfileScreen} />
       <Tab.Screen name="Wallet" component={ProfileScreen} />
       <Tab.Screen name="Support" component={ProfileScreen} />
-      <Tab.Screen name="EditProfile" component={EditProfilePage} />
       
     </Tab.Navigator>
   );

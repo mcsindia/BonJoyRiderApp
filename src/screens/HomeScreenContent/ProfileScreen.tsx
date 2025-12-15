@@ -63,6 +63,7 @@ const ProfileScreen = () => {
         
         // ✅ CRITICAL: Update AsyncStorage with fresh data
         try {
+          console.log("sanj 1", apiProfile)
           await saveRiderProfile(apiProfile);
           console.log('✅ Profile saved to AsyncStorage');
         } catch (storageError) {
