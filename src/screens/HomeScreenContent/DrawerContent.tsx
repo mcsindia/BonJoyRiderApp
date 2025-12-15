@@ -144,7 +144,7 @@ const DrawerContent = ({ navigation }: any) => {
 
         <TouchableOpacity
           style={styles.menuItem}
-          onPress={() => closeAndNavigate('PersonalProfile')}
+          onPress={() => closeAndNavigate('Profile')}
         >
           <Image
             source={require('../../assets/images/personal_account_drawer.png')}

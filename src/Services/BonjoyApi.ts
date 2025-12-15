@@ -129,13 +129,13 @@ export interface GetAllRiderProfilesResponse {
 /* ---------- USER CONTACTS ---------- */
 
 export interface UserContact {
-  contact_id: number;
+  id: number;
   userId: number;
-  contactType?: string; // For create/update
-  relationship?: string; // For update API
+  contactType?: string;
+  relationship?: string;
   contactName: string;
   contactNumber: string;
-  address?: string;
+  address?: string | null;
   is_primary?: number;
   createdAt?: string;
   updatedAt?: string;
@@ -144,7 +144,7 @@ export interface UserContact {
 export interface UserContactResponse {
   success: boolean;
   message: string;
-  data: UserContact[];
+  data: UserContact | UserContact[];
 }
 
 /* ======================================================
@@ -155,7 +155,7 @@ export const saveSession = async (
   token: string,
   user: UserSession
 ) => {
-  console.log("token", token )
+  console.log("token", token)
   await AsyncStorage.multiSet([
     [AUTH_TOKEN_KEY, token],
     [USER_KEY, JSON.stringify(user)],
@@ -394,12 +394,23 @@ export const transformRiderProfileResult = (result: RiderProfileResult): RiderPr
 });
 
 /* ======================================================
-   USER CONTACTS APIS
+   USER CONTACTS APIS - FIXED VERSION
 ====================================================== */
+
+// Helper function to handle API response consistently
+const handleApiResponse = <T>(response: any, successMessage?: string): T => {
+  console.log('API Response:', response.data);
+  
+  if (response.data.success) {
+    return response.data.data;
+  } else {
+    const errorMessage = response.data.message || 'Operation failed';
+    throw new Error(errorMessage);
+  }
+};
 
 /**
  * Create a new user contact
- * Body: { userId, contactType, contactName, contactNumber }
  */
 export const createUserContact = async (
   userId: number,
@@ -409,64 +420,115 @@ export const createUserContact = async (
   is_primary: number,
   relationship: string
 ): Promise<UserContact> => {
-  console.log(userId, contactName, contactType, contactNumber, is_primary, relationship)
-  const response = await api.post<UserContactResponse>('/createUserContact', {
-    userId,
-    contactType,
-    contactName,
-    contactNumber,
-    is_primary,
-    relationship
-  });
+  try {
+    const payload = {
+      userId,
+      contactType,
+      contactName,
+      contactNumber,
+      is_primary,
+      relationship
+    };
 
-  if (!response.data.success || !response.data.data?.[0]) {
-    throw new Error(response.data.message || 'Failed to create contact');
+    console.log('Creating contact with payload:', payload);
+
+    const response = await api.post('/createUserContact', payload);
+    
+    // Handle response based on the format you provided
+    if (response.data.success && response.data.data) {
+      const newContact = response.data.data;
+      
+      // Update local storage
+      const existingContacts = await getUserContacts();
+      const updatedContacts = [...existingContacts, newContact];
+      await saveUserContacts(updatedContacts);
+      
+      return newContact;
+    } else {
+      throw new Error(response.data.message || 'Failed to create contact');
+    }
+  } catch (error: any) {
+    console.error('Error in createUserContact:', error);
+    
+    if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    }
+    throw error;
   }
-
-  const newContact = response.data.data[0];
-  
-  // Update local storage
-  const existingContacts = await getUserContacts();
-  const updatedContacts = [...existingContacts, newContact];
-  await saveUserContacts(updatedContacts);
-  
-  return newContact;
 };
 
 /**
  * Get all user contacts for the current user
  */
 export const getAllUserContacts = async (): Promise<UserContact[]> => {
-  const response = await api.get<UserContactResponse>('/getAllUserContacts');
-  
-  if (!response.data.success) {
-    throw new Error(response.data.message || 'Failed to fetch contacts');
-  }
+  try {
+    const response = await api.get('/getAllUserContacts');
+    
+    console.log('Get all contacts response:', response.data);
 
-  const contacts = response.data.data || [];
-  
-  // Save to local storage
-  await saveUserContacts(contacts);
-  
-  return contacts;
+    if (response.data.success && Array.isArray(response.data.data)) {
+      const contacts = response.data.data;
+      
+      // Save to local storage
+      await saveUserContacts(contacts);
+      
+      return contacts;
+    } else {
+      throw new Error(response.data.message || 'Failed to fetch contacts');
+    }
+  } catch (error: any) {
+    console.error('Error in getAllUserContacts:', error);
+    
+    // Return local contacts as fallback
+    try {
+      const localContacts = await getUserContacts();
+      return localContacts;
+    } catch (localError) {
+      console.error('Failed to get local contacts:', localError);
+      throw error;
+    }
+  }
 };
 
 /**
  * Get user contact by ID
  */
 export const getUserContactById = async (id: number): Promise<UserContact> => {
-  const response = await api.get<UserContactResponse>(`/getUserContactById/${id}`);
-  
-  if (!response.data.success || !response.data.data?.[0]) {
-    throw new Error(response.data.message || 'Contact not found');
-  }
+  try {
+    console.log('Fetching contact with ID:', id);
+    const response = await api.get(`/getUserContactById/${id}`);
+    
+    console.log('Get contact by ID response:', response.data);
 
-  return response.data.data[0];
+    if (response.data.success && response.data.data) {
+      return response.data.data;
+    } else {
+      throw new Error(response.data.message || 'Contact not found');
+    }
+  } catch (error: any) {
+    console.error('Error in getUserContactById:', error);
+    
+    // Try to find in local storage as fallback
+    try {
+      const localContacts = await getUserContacts();
+      const foundContact = localContacts.find(contact => contact.id === id);
+      
+      if (foundContact) {
+        return foundContact;
+      }
+    } catch (localError) {
+      console.error('Failed to get local contacts:', localError);
+    }
+    
+    if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    }
+    throw error;
+  }
 };
 
 /**
  * Update user contact
- * Body: { relationship, address, is_primary, contactName, contactNumber }
  */
 export const updateUserContact = async (
   id: number,
@@ -478,60 +540,76 @@ export const updateUserContact = async (
     contactNumber?: string;
   }
 ): Promise<UserContact> => {
-  const response = await api.put<UserContactResponse>(`/updateUserContact/${id}`, data);
-  
-  if (!response.data.success || !response.data.data?.[0]) {
-    throw new Error(response.data.message || 'Failed to update contact');
-  }
+  try {
+    console.log('Updating contact ID:', id, 'with data:', data);
 
-  const updatedContact = response.data.data[0];
-  
-  // Update local storage
-  const existingContacts = await getUserContacts();
-  const updatedContacts = existingContacts.map(contact =>
-    contact.id === id ? updatedContact : contact
-  );
-  await saveUserContacts(updatedContacts);
-  
-  return updatedContact;
+    const response = await api.put(`/updateUserContact/${id}`, data);
+    
+    console.log('Update contact response:', response.data);
+
+    if (response.data.success && response.data.data) {
+      const updatedContact = response.data.data;
+      
+      // Update local storage
+      const existingContacts = await getUserContacts();
+      const updatedContacts = existingContacts.map(contact => 
+        contact.id === id ? updatedContact : contact
+      );
+      await saveUserContacts(updatedContacts);
+      
+      return updatedContact;
+    } else {
+      throw new Error(response.data.message || 'Failed to update contact');
+    }
+  } catch (error: any) {
+    console.error('Error in updateUserContact:', error);
+    
+    if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    }
+    throw error;
+  }
 };
 
 /**
  * Delete user contact
  */
-export const deleteUserContact = async (id: number): Promise<void> => {
-  const response = await api.delete<ApiResponse<null>>(`/deleteUserContact/${id}`);
-  
-  if (!response.data.success) {
-    throw new Error(response.data.message || 'Failed to delete contact');
+export const deleteUserContact = async (id: number): Promise<{ success: boolean; message: string }> => {
+  try {
+    console.log('Deleting contact ID:', id);
+
+    const response = await api.delete(`/deleteUserContact/${id}`);
+    
+    console.log('Delete contact response:', response.data);
+
+    if (response.data.success) {
+      // Get the success message
+      let successMessage = 'Contact deleted successfully';
+      
+      // Handle different message formats
+      if (typeof response.data.message === 'string') {
+        successMessage = response.data.message;
+      } else if (response.data.message && typeof response.data.message.message === 'string') {
+        successMessage = response.data.message.message;
+      }
+
+      // Update local storage
+      const existingContacts = await getUserContacts();
+      const updatedContacts = existingContacts.filter(contact => contact.id !== id);
+      await saveUserContacts(updatedContacts);
+      
+      return { success: true, message: successMessage };
+    } else {
+      throw new Error(response.data.message || 'Failed to delete contact');
+    }
+  } catch (error: any) {
+    console.error('Error in deleteUserContact:', error);
+    
+    if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    }
+    throw error;
   }
-
-  // Update local storage
-  const existingContacts = await getUserContacts();
-  const updatedContacts = existingContacts.filter(contact => contact.id !== id);
-  await saveUserContacts(updatedContacts);
-};
-
-/* ======================================================
-   HELPER FUNCTIONS FOR CONTACTS
-====================================================== */
-
-/**
- * Get emergency contacts for current user
- */
-export const getEmergencyContacts = async (): Promise<UserContact[]> => {
-  const allContacts = await getUserContacts();
-  return allContacts.filter(contact => 
-    contact.contactType === 'emergency' || contact.relationship === 'emergency'
-  );
-};
-
-/**
- * Get primary contact for current user
- */
-export const getPrimaryContact = async (): Promise<UserContact | null> => {
-  const allContacts = await getUserContacts();
-  return allContacts.find(contact => contact.is_primary === 1) || null;
 };
 
 /**
@@ -547,4 +625,23 @@ export const syncUserContacts = async (): Promise<UserContact[]> => {
     // Return local contacts as fallback
     return await getUserContacts();
   }
+};
+
+/**
+ * Get emergency contacts for current user
+ */
+export const getEmergencyContacts = async (): Promise<UserContact[]> => {
+  const allContacts = await getAllUserContacts();
+  return allContacts.filter(contact => 
+    contact.contactType === 'emergency'
+  );
+};
+
+/**
+ * Get primary contact for current user
+ */
+export const getPrimaryContact = async (): Promise<UserContact | null> => {
+  const allContacts = await getAllUserContacts();
+  const primary = allContacts.find(contact => contact.is_primary === 1);
+  return primary || null;
 };
