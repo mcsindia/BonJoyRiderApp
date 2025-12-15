@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,16 +11,91 @@ import {
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRoute, useFocusEffect } from '@react-navigation/native';
+import { useRoute, useFocusEffect, useNavigation } from '@react-navigation/native';
 import { s, sf, sh, sw } from '../../utils/scale';
-import { getRiderProfile, RiderProfile } from '../../Services/BonjoyApi';
+import {
+  getRiderProfile,
+  getRiderProfileById,
+  getUserSession,
+  saveRiderProfile, // Add this import
+  RiderProfile,
+  transformRiderProfileResult 
+} from '../../Services/BonjoyApi';
+import { imageUrl } from '../../constants/globalConst';
 
-const ProfileScreen = ({ navigation }: any) => {
+const ProfileScreen = () => {
+  const navigation = useNavigation();
   const route = useRoute();
   const [profile, setProfile] = useState<RiderProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const DEFAULT_PROFILE_IMAGE = require('../../assets/images/profile.png');
 
+  // Fetch fresh profile data from API and update AsyncStorage
+  const fetchFreshProfile = async () => {
+    try {
+      // 1. Get user session to get user ID
+      const session = await getUserSession();
+      if (!session) {
+        console.log('No session found');
+        setProfile(null);
+        return;
+      }
+
+      console.log('Fetching fresh profile for user ID:', session.id);
+      
+      // 2. Fetch fresh profile from API using getRiderProfileById
+      const response = await getRiderProfileById(session.id);
+      
+      console.log('API Response:', {
+        success: response.data.success,
+        message: response.data.message,
+        dataLength: response.data.data?.results?.length
+      });
+
+      if (response.data.success && response.data.data.results && response.data.data.results.length > 0) {
+        // Transform API response to RiderProfile format
+        const apiProfile = transformRiderProfileResult(response.data.data.results[0]);
+        console.log('Transformed profile from API:', apiProfile);
+        
+        // Set profile in state for UI
+        setProfile(apiProfile);
+        
+        // ✅ CRITICAL: Update AsyncStorage with fresh data
+        try {
+          await saveRiderProfile(apiProfile);
+          console.log('✅ Profile saved to AsyncStorage');
+        } catch (storageError) {
+          console.log('❌ Error saving to AsyncStorage:', storageError);
+        }
+        
+        return apiProfile;
+      } else {
+        console.log('No profile data in API response');
+        setProfile(null);
+        return null;
+      }
+    } catch (error: any) {
+      console.error('❌ Error fetching fresh profile:', {
+        message: error.message,
+        response: error.response?.data,
+      });
+      
+      // Fallback to AsyncStorage if API fails
+      try {
+        const storedProfile = await getRiderProfile();
+        console.log('Falling back to AsyncStorage profile:', storedProfile);
+        setProfile(storedProfile);
+        return storedProfile;
+      } catch (storageError) {
+        console.log('Error loading from AsyncStorage:', storageError);
+        setProfile(null);
+        return null;
+      }
+    }
+  };
+
+  // Load profile data (with optional refresh UI)
   const loadProfileData = async (isRefreshing = false) => {
     try {
       if (!isRefreshing) {
@@ -29,9 +104,9 @@ const ProfileScreen = ({ navigation }: any) => {
         setRefreshing(true);
       }
       
-      const storedProfile = await getRiderProfile();
-      console.log('Loaded profile from storage:', storedProfile);
-      setProfile(storedProfile);
+      // Always fetch fresh data from API
+      await fetchFreshProfile();
+      
     } catch (error) {
       console.error('Error loading profile:', error);
       Alert.alert('Error', 'Failed to load profile data');
@@ -46,20 +121,30 @@ const ProfileScreen = ({ navigation }: any) => {
     loadProfileData();
   }, []);
 
-  // Handle refresh when coming back from edit screen
+  // Refresh when screen is focused (coming back from edit)
   useFocusEffect(
-    React.useCallback(() => {
-      const params = route.params as { refresh?: boolean } || {};
-      if (params.refresh) {
-        console.log('Refreshing profile data from edit...');
-        loadProfileData(true);
-        // Clear the refresh param to prevent infinite refreshes
-        navigation.setParams({ refresh: false });
-      }
-    }, [route.params, navigation])
+    useCallback(() => {
+      console.log('🔄 Profile screen focused, refreshing data...');
+      loadProfileData();
+      
+      return () => {
+        console.log('Profile screen unfocused');
+      };
+    }, [])
   );
 
-  // Manual refresh
+  // Also check route params for manual refresh trigger
+  useEffect(() => {
+    const params = route.params as { refresh?: boolean } || {};
+    if (params.refresh) {
+      console.log('🔄 Route params indicate refresh needed');
+      loadProfileData(true);
+      // Clear the param to avoid infinite loops
+      navigation.setParams({ refresh: false });
+    }
+  }, [route.params]);
+
+  // Manual refresh (pull-to-refresh)
   const onRefresh = () => {
     loadProfileData(true);
   };
@@ -136,6 +221,10 @@ const ProfileScreen = ({ navigation }: any) => {
     );
   }
 
+  const profileImageSource = profile?.profileImage
+    ? { uri: `${imageUrl}${profile.profileImage}` }
+    : DEFAULT_PROFILE_IMAGE;
+
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView 
@@ -182,7 +271,7 @@ const ProfileScreen = ({ navigation }: any) => {
           <View style={styles.avatarWrapper}>
             {profile.profileImage ? (
               <Image
-                source={{ uri: profile.profileImage }}
+                source={profileImageSource}
                 style={styles.avatar}
                 onError={() => console.log('Failed to load profile image')}
               />

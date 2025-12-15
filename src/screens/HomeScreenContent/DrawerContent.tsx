@@ -19,11 +19,11 @@ import {
   logout,
   RiderProfile,
 } from '../../Services/BonjoyApi';
+import { imageUrl } from '../../constants/globalConst';
 
 const { width } = Dimensions.get('window');
 
 const DEFAULT_PROFILE_IMAGE = require('../../assets/images/profile.png');
-const PROFILE_IMAGE_BASE_URL = 'https://bonjoy.in'; // 👈 backend base
 
 const DrawerContent = ({ navigation }: any) => {
   const [profile, setProfile] = useState<RiderProfile | null>(null);
@@ -86,7 +86,7 @@ const DrawerContent = ({ navigation }: any) => {
 
   const profileImageSource =
     profile?.profileImage
-      ? { uri: `${PROFILE_IMAGE_BASE_URL}${profile.profileImage}` }
+      ? { uri: `${imageUrl}${profile.profileImage}` }
       : DEFAULT_PROFILE_IMAGE;
 
   return (

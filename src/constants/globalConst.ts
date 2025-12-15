@@ -1,0 +1,1 @@
+export const imageUrl = 'https://bonjoy.in:5000'
