@@ -2,12 +2,12 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import HomeScreen from '../screens/HomeScreen';
-import EmergencyContacts from '../screens/HomeScreenContent/EmergencyContactsScreen';
-import ProfileScreen from '../screens/HomeScreenContent/ProfileScreen';
-import EditProfilePage from '../screens/HomeScreenContent/EditProfilePage';
+import EmergencyContacts from '../screens/HomeScreenContent/emergencyContactComponent/EmergencyContactsScreen';
+import ProfileScreen from '../screens/HomeScreenContent/profileScreenComponents/ProfileScreen';
+import EditProfilePage from '../screens/HomeScreenContent/profileScreenComponents/EditProfilePage';
 import AddEmergencyContactScreen from '../screens/HomeScreenContent/emergencyContactComponent/AddEmergencyContactScreen';
 import EmergencyContactDetailScreen from '../screens/HomeScreenContent/emergencyContactComponent/EmergencyContactDetailScreen';
-import EmergencyContactsScreen from '../screens/HomeScreenContent/EmergencyContactsScreen';
+import EmergencyContactsScreen from '../screens/HomeScreenContent/emergencyContactComponent/EmergencyContactsScreen';
 
 export type HomeStackParamList = {
   HomeMain: undefined;

@@ -21,8 +21,8 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { check, request, PERMISSIONS, RESULTS } from 'react-native-permissions';
 
-import { getFontFamily } from '../../utils/fontFamily';
-import { RootStackParamList } from '../../navigation/types';
+import { getFontFamily } from '../../../utils/fontFamily';
+import { RootStackParamList } from '../../../navigation/types';
 
 import {
   updateRiderProfile,
@@ -30,8 +30,9 @@ import {
   getRiderProfile,
   hasMandatoryProfileData,
   RiderProfile,
-} from '../../Services/BonjoyApi';
-import { imageUrl } from '../../constants/globalConst';
+} from '../../../Services/BonjoyApi';
+import { imageUrl } from '../../../constants/globalConst';
+import { s, sf, sh, sw } from '../../../utils/scale';
 
 type NavProp = NativeStackNavigationProp<RootStackParamList, 'Onboarding'>;
 
@@ -95,19 +96,6 @@ const EditProfilePage = () => {
         }
       } catch (error) {
         console.log('Error getting session:', error);
-      }
-
-      // If not in edit mode, check if we should auto-navigate
-      if (!isEditMode) {
-        try {
-          const profile = await getRiderProfile();
-          if (hasMandatoryProfileData(profile)) {
-            navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
-            return;
-          }
-        } catch (error) {
-          console.log('Error checking profile:', error);
-        }
       }
 
       // ✅ FIXED: Prefill form based on available data
@@ -177,7 +165,7 @@ const EditProfilePage = () => {
     };
 
     init();
-  }, [navigation, isEditMode, existingProfile]);
+  }, [navigation, existingProfile]);
 
   /* =====================================================
      PERMISSION HANDLING
@@ -405,7 +393,7 @@ const EditProfilePage = () => {
     if (temporaryAddress && temporaryAddress.trim()) formData.append('temporaryAddress', temporaryAddress.trim());
     
     formData.append('status', 'Active');
-    formData.append('remark', isEditMode ? 'Profile updated' : 'Onboarding completed');
+    formData.append('remark','Profile updated');
     
     // Log FormData for debugging
     if (__DEV__ && (formData as any)._parts) {
@@ -459,18 +447,15 @@ const EditProfilePage = () => {
       
       Alert.alert(
         'Success',
-        isEditMode ? 'Profile updated successfully!' : 'Profile created successfully!',
+        'Profile updated successfully!',
         [
           {
             text: 'OK',
             onPress: () => {
               setLoading(false);
-              if (isEditMode) {
                 // Pass refresh flag back to ProfileScreen
                 navigation.navigate('Profile' as any, { refresh: true });
-              } else {
-                navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
-              }
+              
             }
           }
         ]
@@ -493,11 +478,8 @@ const EditProfilePage = () => {
             {
               text: 'OK',
               onPress: () => {
-                if (isEditMode) {
                   navigation.navigate('Profile' as any, { refresh: true });
-                } else {
-                  navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
-                }
+  
               }
             }
           ]
@@ -560,20 +542,20 @@ const EditProfilePage = () => {
           keyboardShouldPersistTaps="handled"
         >
           <Image
-            source={require('../../assets/images/profile_bg.png')}
+            source={require('../../../assets/images/profile_bg.png')}
             style={styles.headerBg}
           />
 
           {/* Back Button */}
           <TouchableOpacity style={styles.backButton} onPress={handleBack}>
             <Image
-              source={require('../../assets/icons/left_arrow.png')}
+              source={require('../../../assets/icons/left_arrow.png')}
               style={styles.backIcon}
             />
           </TouchableOpacity>
 
           <Text style={styles.headerText}>
-            {isEditMode ? 'Edit Profile' : 'Complete Your Profile'}
+            { 'Edit Profile' }
           </Text>
 
           <View style={styles.card}>
@@ -589,7 +571,7 @@ const EditProfilePage = () => {
                 ) : (
                   <View style={styles.profileImagePlaceholder}>
                     <Image
-                      source={require('../../assets/icons/camera.png')}
+                      source={require('../../../assets/icons/camera.png')}
                       style={styles.cameraIcon}
                     />
                     <Text style={styles.profileImageText}>Add Photo</Text>
@@ -597,7 +579,7 @@ const EditProfilePage = () => {
                 )}
                 <View style={styles.editImageBadge}>
                   <Image
-                    source={require('../../assets/icons/camera.png')}
+                    source={require('../../../assets/icons/camera.png')}
                     style={styles.editIcon}
                   />
                 </View>
@@ -644,7 +626,7 @@ const EditProfilePage = () => {
                 <Text style={[styles.valueText, !gender && styles.placeholder]}>
                   {gender || 'Gender'}
                 </Text>
-                <Image source={require('../../assets/icons/down_arrow.png')} />
+                <Image source={require('../../../assets/icons/down_arrow.png')} />
               </View>
             </TouchableOpacity>
 
@@ -665,7 +647,7 @@ const EditProfilePage = () => {
                 <Text style={[styles.valueText, !dob && styles.placeholder]}>
                   {dob ? dob.toLocaleDateString('en-IN') : 'Date Of Birth'}
                 </Text>
-                <Image source={require('../../assets/icons/calendar.png')} />
+                <Image source={require('../../../assets/icons/calendar.png')} />
               </View>
             </TouchableOpacity>
 
@@ -687,7 +669,7 @@ const EditProfilePage = () => {
             <View style={styles.requiredWrapper}>
               <View style={styles.mobileRow}>
                 <Image
-                  source={require('../../assets/icons/india_flag.png')}
+                  source={require('../../../assets/icons/india_flag.png')}
                   style={styles.flag}
                 />
                 <Text style={styles.code}>+91</Text>
@@ -721,7 +703,7 @@ const EditProfilePage = () => {
                 <Text style={[styles.valueText, !stateVal && styles.placeholder]}>
                   {stateVal || 'State'}
                 </Text>
-                <Image source={require('../../assets/icons/down_arrow.png')} />
+                <Image source={require('../../../assets/icons/down_arrow.png')} />
               </View>
             </TouchableOpacity>
 
@@ -746,7 +728,7 @@ const EditProfilePage = () => {
                 <Text style={[styles.valueText, !city && styles.placeholder]}>
                   {city || 'City'}
                 </Text>
-                <Image source={require('../../assets/icons/down_arrow.png')} />
+                <Image source={require('../../../assets/icons/down_arrow.png')} />
               </View>
             </TouchableOpacity>
 
@@ -800,7 +782,7 @@ const EditProfilePage = () => {
                   <ActivityIndicator color="#FFF" size="small" />
                 ) : (
                   <Text style={styles.saveText}>
-                    {isEditMode ? 'Update Profile' : 'Save & Continue'}
+                    {'Update Profile'}
                   </Text>
                 )}
               </TouchableOpacity>
@@ -866,7 +848,7 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: 'absolute',
-    top: 60,
+    top: 20,
     left: 20,
     zIndex: 10,
   },
@@ -876,11 +858,11 @@ const styles = StyleSheet.create({
     tintColor: '#000',
   },
   headerText: {
-    marginTop: 50,
     fontSize: 20,
     fontFamily: getFontFamily('medium'),
     textAlign: 'center',
     color: '#111827',
+    marginTop:20
   },
   card: {
     marginTop: 20,

@@ -5,10 +5,11 @@ import { Image, StyleSheet } from 'react-native';
 
 import DrawerContent from '../screens/HomeScreenContent/DrawerContent';
 import HomeStack from './HomeStack';
-import ProfileScreen from '../screens/HomeScreenContent/ProfileScreen';
+import ProfileScreen from '../screens/HomeScreenContent/profileScreenComponents/ProfileScreen';
 
 import { s, sf, sh, sw } from '../utils/scale';
-import EditProfilePage from '../screens/HomeScreenContent/EditProfilePage';
+import EditProfilePage from '../screens/HomeScreenContent/profileScreenComponents/EditProfilePage';
+import TodoScreen from '../screens/HomeScreenContent/Others/TodoScreen';
 // tab icons
 const homeIcon = require('../assets/tab-icons/home.png');
 const bikeIcon = require('../assets/tab-icons/bike.png');
@@ -55,10 +56,10 @@ const BottomTabNavigator = () => {
       })}
     >
       <Tab.Screen name="Home" component={HomeStack} />
-      <Tab.Screen name="Bike" component={ProfileScreen} />
+      <Tab.Screen name="Bike" component={TodoScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
-      <Tab.Screen name="Wallet" component={ProfileScreen} />
-      <Tab.Screen name="Support" component={ProfileScreen} />
+      <Tab.Screen name="Wallet" component={TodoScreen} />
+      <Tab.Screen name="Support" component={TodoScreen} />
       
     </Tab.Navigator>
   );

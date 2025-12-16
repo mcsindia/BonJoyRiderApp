@@ -13,14 +13,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 
-import { getFontFamily } from '../../utils/fontFamily';
-import { s, sf, sh, sw } from '../../utils/scale';
+import { getFontFamily } from '../../../utils/fontFamily';
+import { s, sf, sh, sw } from '../../../utils/scale';
 
 import {
   getAllUserContacts,
   syncUserContacts,
   UserContact,
-} from '../../Services/BonjoyApi';
+} from '../../../Services/BonjoyApi';
 
 const EmergencyContactsScreen = () => {
   const navigation = useNavigation();
@@ -118,7 +118,7 @@ const EmergencyContactsScreen = () => {
       >
         <View style={styles.avatarContainer}>
           <Image
-            source={require('../../assets/images/contact.png')}
+            source={require('../../../assets/images/contact.png')}
             style={styles.avatar}
           />
           {isPrimary && (
@@ -135,14 +135,14 @@ const EmergencyContactsScreen = () => {
           <Text style={styles.contactStatus}>
             {isPrimary ? 'Primary emergency contact' : 'Emergency contact'}
           </Text>
-          {contact.relationship && (
+          {/* {contact.relationship && (
             <Text style={styles.relationshipText}>
               {getRelationshipLabel(contact.relationship)}
             </Text>
-          )}
+          )} */}
         </View>
         <Image
-          source={require('../../assets/icons/right_arrow_circle.png')}
+          source={require('../../../assets/icons/right_arrow_circle.png')}
           style={styles.arrowIcon}
         />
       </TouchableOpacity>
@@ -163,7 +163,7 @@ const EmergencyContactsScreen = () => {
         disabled={loading}
       >
         <Image
-          source={require('../../assets/icons/add.png')}
+          source={require('../../../assets/icons/add.png')}
           style={styles.plusIcon}
         />
         <Text style={styles.addContactText}>Add Emergency Contact</Text>
@@ -209,7 +209,7 @@ const EmergencyContactsScreen = () => {
             disabled={loading}
           >
             <Image
-              source={require('../../assets/icons/add.png')}
+              source={require('../../../assets/icons/add.png')}
               style={styles.plusIcon2}
             />
           </TouchableOpacity>
@@ -240,7 +240,7 @@ const EmergencyContactsScreen = () => {
       >
         {/* YELLOW HEADER */}
         <Image
-          source={require('../../assets/images/profile_bg.png')}
+          source={require('../../../assets/images/profile_bg.png')}
           style={styles.headerBg}
           resizeMode="stretch"
         />
@@ -252,7 +252,7 @@ const EmergencyContactsScreen = () => {
             disabled={loading}
           >
             <Image
-              source={require('../../assets/icons/left_arrow.png')}
+              source={require('../../../assets/icons/left_arrow.png')}
               style={styles.backIcon}
             />
           </TouchableOpacity>
@@ -321,15 +321,14 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#FFFFFF',
     borderRadius: s(24),
-    padding: s(24),
+    padding: s(15),
     shadowColor: '#000',
     shadowOpacity: 0.05,
     shadowRadius: s(10),
     shadowOffset: { width: 0, height: sh(4) },
-    elevation: s(5),
-    marginTop: sh(40),
-    marginHorizontal: sw(20),
-    paddingVertical: sh(50),
+    elevation: s(1),
+    marginTop: sh(10),
+    marginHorizontal: sw(15),
     minHeight: sh(300),
     position: 'relative',
   },
@@ -353,7 +352,7 @@ const styles = StyleSheet.create({
     fontFamily: getFontFamily('medium'),
   },
   instruction: {
-    fontSize: sf(14),
+    fontSize: sf(12),
     color: '#374151',
     marginBottom: sh(24),
     lineHeight: sh(20),
@@ -385,10 +384,9 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   plusIcon2: {
-    width: sw(40),
-    height: sh(40),
+    width: sw(45),
+    height: sh(45),
     alignItems: 'center',
-    tintColor: 'white',
     margin: s(10)
   },
   addContactText: {
@@ -401,8 +399,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#EEF2FF',
     borderRadius: s(16),
-    padding: s(12),
+    padding: s(8),
     marginBottom: sh(12),
+    borderWidth: s(1),
+    borderColor: '#CBD5E1',
+    borderStyle: 'dashed'
   },
   avatarContainer: {
     position: 'relative',
@@ -417,32 +418,31 @@ const styles = StyleSheet.create({
     top: -5,
     right: -5,
     backgroundColor: '#10B981',
-    borderRadius: s(10),
-    paddingHorizontal: sw(6),
-    paddingVertical: sh(2),
+    borderRadius: s(5),
+    paddingHorizontal: sw(6)
   },
   primaryBadgeText: {
     color: '#FFFFFF',
-    fontSize: sf(10),
-    fontFamily: getFontFamily('semiBold'),
+    fontSize: sf(6),
+    fontFamily: getFontFamily('regular'),
   },
   contactInfo: {
-    flex: 1,
+    flex: 1
   },
   contactName: {
-    fontSize: sf(16),
+    fontSize: sf(14),
     fontWeight: '600',
     color: '#0F172A',
     fontFamily: getFontFamily('semiBold'),
   },
   contactNumber: {
-    fontSize: sf(14),
+    fontSize: sf(12),
     color: '#374151',
     fontFamily: getFontFamily('regular'),
     marginVertical: sh(2),
   },
   contactStatus: {
-    fontSize: sf(12),
+    fontSize: sf(10),
     color: '#6B7280',
     fontFamily: getFontFamily('regular'),
   },
@@ -458,14 +458,10 @@ const styles = StyleSheet.create({
     tintColor: '#0F172A',
   },
   addButton: {
-    borderRadius: s(32),
-    backgroundColor: '#111827',
     justifyContent: 'center',
     alignItems: 'center',
     alignSelf: 'center',
-    marginTop: sh(24),
-    width: sw(60),
-    height: sh(60),
+    marginTop: sh(20)
   },
   maxContactsMessage: {
     fontSize: sf(14),

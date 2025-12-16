@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useFocusEffect, useNavigation } from '@react-navigation/native';
-import { s, sf, sh, sw } from '../../utils/scale';
+import { s, sf, sh, sw } from '../../../utils/scale';
 import {
   getRiderProfile,
   getRiderProfileById,
@@ -20,8 +20,8 @@ import {
   saveRiderProfile, // Add this import
   RiderProfile,
   transformRiderProfileResult 
-} from '../../Services/BonjoyApi';
-import { imageUrl } from '../../constants/globalConst';
+} from '../../../Services/BonjoyApi';
+import { imageUrl } from '../../../constants/globalConst';
 
 const ProfileScreen = () => {
   const navigation = useNavigation();
@@ -29,7 +29,7 @@ const ProfileScreen = () => {
   const [profile, setProfile] = useState<RiderProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const DEFAULT_PROFILE_IMAGE = require('../../assets/images/profile.png');
+  const DEFAULT_PROFILE_IMAGE = require('../../../assets/images/profile.png');
 
   // Fetch fresh profile data from API and update AsyncStorage
   const fetchFreshProfile = async () => {
@@ -205,7 +205,7 @@ const ProfileScreen = () => {
     return (
       <SafeAreaView style={styles.errorContainer}>
         <Image
-          source={require('../../assets/images/contact.png')}
+          source={require('../../../assets/images/contact.png')}
           style={styles.errorImage}
         />
         <Text style={styles.errorTitle}>No Profile Found</Text>
@@ -243,14 +243,14 @@ const ProfileScreen = () => {
         <View style={styles.header}>
           <TouchableOpacity onPress={handleBackPress}>
             <Image
-              source={require('../../assets/icons/left_arrow.png')}
+              source={require('../../../assets/icons/left_arrow.png')}
               style={styles.menuIcon}
             />
           </TouchableOpacity>
 
           <View style={styles.logoRow}>
             <Image
-              source={require('../../assets/images/applogo.png')}
+              source={require('../../../assets/images/applogo.png')}
               style={styles.logo}
             />
 
@@ -278,7 +278,7 @@ const ProfileScreen = () => {
               />
             ) : (
               <Image
-                source={require('../../assets/images/contact.png')}
+                source={require('../../../assets/images/contact.png')}
                 style={styles.avatar}
               />
             )}
