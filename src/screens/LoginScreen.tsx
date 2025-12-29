@@ -15,6 +15,7 @@ import {
   ScrollView,
   Modal,
   Alert,
+  Animated,
 } from 'react-native';
 import CountryPicker from 'react-native-country-picker-modal';
 import { useNavigation } from '@react-navigation/native';
@@ -32,7 +33,7 @@ import {
   getRiderProfileById,
   saveRiderProfile,
   hasMandatoryProfileData,
-  transformRiderProfileResult, // Add this export to your API service
+  transformRiderProfileResult,
   type RiderProfile,
 } from '../Services/BonjoyApi';
 
@@ -49,9 +50,6 @@ type NavProp = NativeStackNavigationProp<
    HELPER FUNCTIONS
 ====================================================== */
 
-/**
- * Extracts and transforms rider profile from API response
- */
 const extractRiderProfile = async (
   userId: number
 ): Promise<RiderProfile | null> => {
@@ -64,7 +62,6 @@ const extractRiderProfile = async (
       return null;
     }
 
-    // Transform the API response to match RiderProfile interface
     return transformRiderProfileResult(profileResult);
   } catch (error) {
     console.error('Error fetching rider profile:', error);
@@ -72,9 +69,6 @@ const extractRiderProfile = async (
   }
 };
 
-/**
- * Handles successful authentication and navigation
- */
 const handleSuccessfulAuth = async (
   userId: number,
   navigation: NavProp
@@ -83,7 +77,6 @@ const handleSuccessfulAuth = async (
     const profile = await extractRiderProfile(userId);
     
     if (profile) {
-      console.log("sanj 2", profile)
       await saveRiderProfile(profile);
       
       const shouldGoToHome = hasMandatoryProfileData(profile);
@@ -107,7 +100,6 @@ const handleSuccessfulAuth = async (
         ],
       });
     } else {
-      // No profile exists, go to onboarding
       navigation.reset({
         index: 0,
         routes: [{ name: 'Onboarding' }],
@@ -115,7 +107,6 @@ const handleSuccessfulAuth = async (
     }
   } catch (error) {
     console.error('Auth flow error:', error);
-    // On error, go to onboarding to create profile
     navigation.reset({
       index: 0,
       routes: [{ name: 'Onboarding' }],
@@ -137,12 +128,16 @@ const MobileVerificationScreen = () => {
   const [loading, setLoading] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
   const [showOtpDialog, setShowOtpDialog] = useState(false);
+  const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
 
   const otpRefs = useRef<TextInput[]>([]);
   const resendIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const cursorAnimations = useRef<Animated.Value[]>(
+    Array(OTP_LENGTH).fill(null).map(() => new Animated.Value(1))
+  );
 
   /* =====================================================
-     AUTO LOGIN CHECK (APP RELAUNCH CASE)
+     AUTO LOGIN CHECK
   ====================================================== */
 
   useEffect(() => {
@@ -156,6 +151,37 @@ const MobileVerificationScreen = () => {
 
     checkExistingSession();
   }, [navigation]);
+
+  /* =====================================================
+     CURSOR BLINK ANIMATION
+  ====================================================== */
+
+  useEffect(() => {
+    if (focusedIndex !== null) {
+      const animation = cursorAnimations.current[focusedIndex];
+      
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(animation, {
+            toValue: 0,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(animation, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    }
+
+    return () => {
+      cursorAnimations.current.forEach(anim => {
+        anim.stopAnimation();
+      });
+    };
+  }, [focusedIndex]);
 
   /* =====================================================
      HELPERS
@@ -197,6 +223,9 @@ const MobileVerificationScreen = () => {
       setStep('OTP');
       setOtp(Array(OTP_LENGTH).fill(''));
       startResendTimer();
+      setTimeout(() => {
+        otpRefs.current[0]?.focus();
+      }, 100);
     } catch (error) {
       console.error('Send OTP error:', error);
       Alert.alert(
@@ -209,23 +238,45 @@ const MobileVerificationScreen = () => {
   }, [phone, loading, startResendTimer]);
 
   /* =====================================================
-     OTP INPUT
+     OTP INPUT IMPROVED
   ====================================================== */
 
   const onOtpChange = (value: string, index: number) => {
     const digit = value.replace(/[^0-9]/g, '').slice(0, 1);
     const updated = [...otp];
-    updated[index] = digit;
-    setOtp(updated);
-
-    if (digit && index < OTP_LENGTH - 1) {
-      otpRefs.current[index + 1]?.focus();
+    
+    if (digit) {
+      updated[index] = digit;
+      setOtp(updated);
+      
+      if (index < OTP_LENGTH - 1) {
+        otpRefs.current[index + 1]?.focus();
+      } else {
+        otpRefs.current[index]?.blur();
+        setFocusedIndex(null);
+      }
+    } else {
+      updated[index] = '';
+      setOtp(updated);
     }
   };
 
   const onOtpKeyPress = (key: string, index: number) => {
     if (key === 'Backspace' && !otp[index] && index > 0) {
+      const updated = [...otp];
+      updated[index - 1] = '';
+      setOtp(updated);
       otpRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleOtpBoxPress = (index: number) => {
+    const firstEmptyIndex = otp.findIndex(digit => digit === '');
+    
+    if (firstEmptyIndex !== -1 && firstEmptyIndex < index) {
+      otpRefs.current[firstEmptyIndex]?.focus();
+    } else {
+      otpRefs.current[index]?.focus();
     }
   };
 
@@ -242,11 +293,9 @@ const MobileVerificationScreen = () => {
       setLoading(true);
       const otpValue = otp.join('');
 
-      // 1️⃣ Verify OTP & create session
       const user = await verifyOtpAndLogin(phone, otpValue);
       console.log('User authenticated:', user);
 
-      // 2️⃣ Handle post-auth flow
       await handleSuccessfulAuth(user.id, navigation);
     } catch (error) {
       console.error('Verify OTP error:', error);
@@ -293,8 +342,77 @@ const MobileVerificationScreen = () => {
   };
 
   /* =====================================================
-     UI
+     UI - ENHANCED OTP BOXES WITH SIDE CURSOR
   ====================================================== */
+
+  const renderOtpInputs = () => {
+    return otp.map((digit, index) => {
+      const isFocused = focusedIndex === index;
+      const cursorOpacity = cursorAnimations.current[index];
+      const hasDigit = digit !== '';
+
+      return (
+        <TouchableOpacity
+          key={index}
+          activeOpacity={0.9}
+          onPress={() => handleOtpBoxPress(index)}
+          style={styles.otpBoxContainer}
+        >
+          <View style={[
+            styles.otpBox,
+            isFocused && styles.otpBoxFocused,
+          ]}>
+            {/* Digit container with proper alignment */}
+            <View style={styles.digitContainer}>
+              <Text style={styles.otpDigit}>
+                {digit}
+              </Text>
+              
+              {/* Blinking Cursor Indicator - appears to the right of the digit */}
+              {isFocused && !hasDigit && (
+                <Animated.View 
+                  style={[
+                    styles.cursor,
+                    { opacity: cursorOpacity }
+                  ]}
+                />
+              )}
+              
+              {/* Cursor appears after the digit when there's a digit */}
+              {isFocused && hasDigit && (
+                <Animated.View 
+                  style={[
+                    styles.cursor,
+                    styles.cursorAfterDigit,
+                    { opacity: cursorOpacity }
+                  ]}
+                />
+              )}
+            </View>
+          </View>
+          
+          {/* Hidden TextInput for actual input */}
+          <TextInput
+            ref={el => (otpRefs.current[index] = el!)}
+            value={digit}
+            onChangeText={val => onOtpChange(val, index)}
+            onKeyPress={({ nativeEvent }) =>
+              onOtpKeyPress(nativeEvent.key, index)
+            }
+            onFocus={() => setFocusedIndex(index)}
+            onBlur={() => setFocusedIndex(null)}
+            keyboardType="number-pad"
+            maxLength={1}
+            textAlign="center"
+            style={styles.hiddenInput}
+            caretHidden={true}
+            autoFocus={index === 0 && step === 'OTP'}
+            contextMenuHidden={true}
+          />
+        </TouchableOpacity>
+      );
+    });
+  };
 
   return (
     <View style={styles.root}>
@@ -387,22 +505,7 @@ const MobileVerificationScreen = () => {
                 </Text>
 
                 <View style={styles.otpRow}>
-                  {otp.map((digit, index) => (
-                    <TextInput
-                      key={index}
-                      ref={el => (otpRefs.current[index] = el!)}
-                      value={digit}
-                      onChangeText={val => onOtpChange(val, index)}
-                      onKeyPress={({ nativeEvent }) =>
-                        onOtpKeyPress(nativeEvent.key, index)
-                      }
-                      keyboardType="number-pad"
-                      maxLength={1}
-                      textAlign="center"
-                      style={styles.otpBox}
-                      caretHidden
-                    />
-                  ))}
+                  {renderOtpInputs()}
                 </View>
 
                 <View style={styles.resendRow}>
@@ -470,8 +573,7 @@ const MobileVerificationScreen = () => {
 
 export default MobileVerificationScreen;
 
-/* ================= STYLES ================= */
-// Styles remain the same...
+/* ================= ENHANCED STYLES WITH SIDE CURSOR ================= */
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#FFF' },
   scrollContent: { paddingBottom: BOTTOM_IMAGE_HEIGHT + 40 },
@@ -527,28 +629,103 @@ const styles = StyleSheet.create({
   codeAndInput: { flex: 1, flexDirection: 'row', alignItems: 'center' },
   callingCode: { fontSize: sf(18), color: '#0F172A' },
   phoneInput: { flex: 1, fontSize: sf(18), color: '#0F172A' },
-  otpRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  otpRow: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between',
+    marginVertical: sh(10),
+  },
+  otpBoxContainer: {
+    position: 'relative',
+  },
   otpBox: {
     width: sw(56),
     height: sh(56),
     borderRadius: s(12),
     borderWidth: 1.2,
     borderColor: '#D1D5DB',
-    fontSize: sf(20),
+    backgroundColor: '#F8FAFC',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  resendRow: { flexDirection: 'row', justifyContent: 'space-between', marginVertical: sh(15)},
-  resendText: { fontSize: sf(15), color: '#6B7280' },
-  resendAction: { fontSize: sf(15), color: '#FBBF24' },
+  otpBoxFocused: {
+    borderColor: '#3B82F6',
+    borderWidth: 2,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  digitContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: sh(24),
+    minWidth: sw(24),
+  },
+  otpDigit: {
+    fontSize: sf(24),
+    color: '#0F172A',
+    fontFamily: getFontFamily('semiBold'),
+    textAlign: 'center',
+  },
+  cursor: {
+    width: sw(2),
+    height: sh(24),
+    backgroundColor: '#3B82F6',
+    marginLeft: sw(4), // Space between digit and cursor
+    borderRadius: 1,
+  },
+  cursorAfterDigit: {
+    // Additional styling if needed for cursor after digit
+  },
+  hiddenInput: {
+    position: 'absolute',
+    width: sw(56),
+    height: sh(56),
+    opacity: 0,
+    zIndex: 10,
+  },
+  resendRow: { 
+    flexDirection: 'row', 
+    justifyContent: 'space-between', 
+    marginVertical: sh(20),
+    alignItems: 'center',
+  },
+  resendText: { 
+    fontSize: sf(15), 
+    color: '#6B7280',
+    fontFamily: getFontFamily('regular'),
+  },
+  resendAction: { 
+    fontSize: sf(15), 
+    color: '#FBBF24',
+    fontFamily: getFontFamily('semiBold'),
+  },
   button: {
     height: sh(56),
     backgroundColor: '#0F172A',
     borderRadius: s(14),
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: sh(10),
   },
-  buttonText: { fontSize: sf(18), color: '#FFF' },
-  absoluteBottom: { position: 'absolute', bottom: 0, width: '100%' },
-  bottomImage: { width: '100%', height: '100%' },
+  buttonText: { 
+    fontSize: sf(18), 
+    color: '#FFF',
+    fontFamily: getFontFamily('semiBold'),
+  },
+  absoluteBottom: { 
+    position: 'absolute', 
+    bottom: 0, 
+    width: '100%',
+    height: BOTTOM_IMAGE_HEIGHT,
+  },
+  bottomImage: { 
+    width: '100%', 
+    height: '100%',
+  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.45)',
@@ -562,7 +739,12 @@ const styles = StyleSheet.create({
     padding: s(24),
     alignItems: 'center',
   },
-  modalText: { fontSize: sf(18), color: '#4B5563' },
+  modalText: { 
+    fontSize: sf(18), 
+    color: '#4B5563',
+    textAlign: 'center',
+    fontFamily: getFontFamily('semiBold'),
+  },
   modalButton: {
     backgroundColor: '#1E293B',
     paddingHorizontal: sw(36),
@@ -570,5 +752,9 @@ const styles = StyleSheet.create({
     borderRadius: s(24),
     marginTop: sh(20),
   },
-  modableButtonText: { fontSize: sf(16), color: '#FFF' },
+  modableButtonText: { 
+    fontSize: sf(16), 
+    color: '#FFF',
+    fontFamily: getFontFamily('semiBold'),
+  },
 });

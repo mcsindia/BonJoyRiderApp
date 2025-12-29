@@ -38,11 +38,9 @@ type NavProp = NativeStackNavigationProp<RootStackParamList, 'Onboarding'>;
 
 const FIELD_HEIGHT = 44;
 
-const STATES = ['Maharashtra', 'Karnataka', 'Tamil Nadu'];
+const STATES = ['Rajasthan'];
 const CITIES: Record<string, string[]> = {
-  Maharashtra: ['Mumbai', 'Pune'],
-  Karnataka: ['Bangalore', 'Mysore'],
-  'Tamil Nadu': ['Chennai', 'Coimbatore'],
+  Rajasthan: ['Kota', 'Ajmer', 'Jaipur']
 };
 
 const GENDERS = ['Male', 'Female', 'Other'];
