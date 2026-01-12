@@ -266,7 +266,7 @@ const ProfileScreen = () => {
         {/* PROFILE CARD */}
         <View style={styles.card}>
           <Text style={styles.userName}>
-            {profile.fullName ? `Mr. ${profile.fullName}` : 'No Name'}
+            {profile.fullName ? `${profile.fullName}` : 'No Name'}
           </Text>
 
           <View style={styles.avatarWrapper}>

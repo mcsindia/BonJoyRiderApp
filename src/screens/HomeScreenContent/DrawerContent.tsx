@@ -128,9 +128,58 @@ const DrawerContent = ({ navigation }: any) => {
             source={require('../../assets/images/home_drawer.png')}
             style={styles.icon}
           />
-          <Text style={styles.menuText}>Dashboard</Text>
+          <Text style={styles.menuText}>Home</Text>
         </TouchableOpacity>
-
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => closeAndNavigate('')}
+        >
+          <Image
+            source={require('../../assets/images/contact_drawer.png')}
+            style={styles.icon}
+          />
+          <Text style={styles.menuText}>Electric</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => closeAndNavigate('')}
+        >
+          <Image
+            source={require('../../assets/images/contact_drawer.png')}
+            style={styles.icon}
+          />
+          <Text style={styles.menuText}>Ride History</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => closeAndNavigate('')}
+        >
+          <Image
+            source={require('../../assets/images/contact_drawer.png')}
+            style={styles.icon}
+          />
+          <Text style={styles.menuText}>Bonjoy Money</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => closeAndNavigate('')}
+        >
+          <Image
+            source={require('../../assets/images/contact_drawer.png')}
+            style={styles.icon}
+          />
+          <Text style={styles.menuText}>Payments</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => closeAndNavigate('')}
+        >
+          <Image
+            source={require('../../assets/images/contact_drawer.png')}
+            style={styles.icon}
+          />
+          <Text style={styles.menuText}>Bonjoy Coins</Text>
+        </TouchableOpacity>
         <TouchableOpacity
           style={styles.menuItem}
           onPress={() => closeAndNavigate('EmergencyContacts')}
@@ -185,16 +234,17 @@ const DrawerContent = ({ navigation }: any) => {
           />
           <Text style={styles.menuText}>About</Text>
         </TouchableOpacity>
-      </View>
-
-      {/* SIGN OUT */}
-      <TouchableOpacity style={styles.signOut} onPress={handleLogout}>
+        <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
         <Image
           source={require('../../assets/images/logout_drawer.png')}
           style={styles.icon}
         />
         <Text style={styles.signOutText}>Sign out</Text>
       </TouchableOpacity>
+      </View>
+
+      {/* SIGN OUT */}
+     
     </SafeAreaView>
   );
 };
@@ -257,32 +307,23 @@ const styles = StyleSheet.create({
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: sh(16),
+    paddingVertical: sh(8),
     borderBottomWidth: s(1),
     borderBottomColor: '#E2E8F0',
   },
   icon: {
-    width: sw(24),
-    height: sh(24),
+    width: sw(20),
+    height: sh(20),
     tintColor: '#1F2937',
     marginRight: sw(16),
   },
   menuText: {
-    fontSize: sf(16),
+    fontSize: sf(14),
     color: '#1F2937',
     fontFamily: getFontFamily('regular'),
   },
-  signOut: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: sh(16),
-    borderTopWidth: s(1),
-    borderTopColor: '#E2E8F0',
-    marginTop: 'auto',
-    marginStart: sw(20),
-  },
   signOutText: {
-    fontSize: sf(16),
+    fontSize: sf(14),
     color: '#1F2937',
     fontFamily: getFontFamily('regular'),
   },
