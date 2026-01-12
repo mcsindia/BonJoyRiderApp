@@ -22,7 +22,7 @@ import {
 } from '../../Services/BonjoyApi';
 
 const { width, height } = Dimensions.get('window');
-const SCREEN_COUNT = 3;
+const SCREEN_COUNT = 2; // Reduced from 3 to 2 since we merged first and second screens
 
 type NavDecision = 'HOME' | 'ONBOARDING' | 'NONE';
 
@@ -79,44 +79,35 @@ const SplashScreen = () => {
     StatusBar.setBackgroundColor('#FFFFFF', true);
     StatusBar.setBarStyle('dark-content', true);
 
-    // 1️⃣ First screen (2s)
-    const firstTimer = setTimeout(() => {
+    // Combined first and second screen (3s total)
+    const combinedTimer = setTimeout(() => {
+      // 🔴 CHECK NAVIGATION DECISION AFTER 3 SECONDS
+      if (navDecisionRef.current === 'HOME') {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Home' }],
+        });
+        return;
+      }
+
+      if (navDecisionRef.current === 'ONBOARDING') {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Onboarding' }],
+        });
+        return;
+      }
+
+      // 🔴 Only slide to final screen if no auto navigation
       Animated.timing(slideAnim, {
-        toValue: -width,
+        toValue: -width, // Now we only have 2 screens, so slide to -width (second screen)
         duration: 300,
         useNativeDriver: true,
-      }).start(() => {
-        // 2️⃣ Second screen (2s)
-        setTimeout(() => {
-          // 🔴 BEFORE 3RD SCREEN — DECIDE NAVIGATION
-          if (navDecisionRef.current === 'HOME') {
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'Home' }],
-            });
-            return;
-          }
-
-          if (navDecisionRef.current === 'ONBOARDING') {
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'Onboarding' }],
-            });
-            return;
-          }
-
-          // 3️⃣ Only slide to 3rd screen if no auto navigation
-          Animated.timing(slideAnim, {
-            toValue: -width * 2,
-            duration: 300,
-            useNativeDriver: true,
-          }).start();
-        }, 2000);
-      });
-    }, 2000);
+      }).start();
+    }, 3000); // Combined timer: 3000ms (3 seconds)
 
     return () => {
-      clearTimeout(firstTimer);
+      clearTimeout(combinedTimer);
     };
   }, [navigation]);
 
@@ -133,30 +124,21 @@ const SplashScreen = () => {
             { transform: [{ translateX: slideAnim }] },
           ]}
         >
-          {/* 1st Screen */}
+          {/* 1st Screen (Combined first and second) */}
           <View style={styles.screen}>
-            <View style={styles.firstSplashBg}>
-              <Image
-                source={require('../../assets/images/splash1.png')}
-                style={styles.fullImage}
-              />
-            </View>
-          </View>
-
-          {/* 2nd Screen */}
-          <View style={styles.screen}>
+            {/* Show gradient from the beginning, but start with opacity animation */}
             <LinearGradient
               colors={['#FCC737', '#EE8421']}
-              style={styles.secondSplashBg}
+              style={styles.combinedSplashBg}
             >
               <Image
-                source={require('../../assets/images/splash.png')}
+                source={require('../../assets/images/new_splash.png')}
                 style={styles.fullImage}
               />
             </LinearGradient>
           </View>
 
-          {/* 3rd Screen (ONLY if needed) */}
+          {/* 2nd Screen (Login screen - ONLY if needed) */}
           <View style={styles.screen}>
             <View style={styles.thirdContainer}>
               <View style={styles.thirdImageBox}>
@@ -204,14 +186,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   screen: { width, height: '100%' },
-  firstSplashBg: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    opacity: 0.8,
-  },
-  secondSplashBg: {
+  combinedSplashBg: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
@@ -219,7 +194,7 @@ const styles = StyleSheet.create({
   fullImage: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
+    resizeMode: 'stretch',
   },
   thirdContainer: {
     flex: 1,

@@ -416,31 +416,24 @@ const MobileVerificationScreen = () => {
 
   return (
     <View style={styles.root}>
+      {/* Full background image */}
+      <Image
+        source={require('../assets/images/login_bg.png')}
+        style={styles.fullBackgroundImage}
+        resizeMode="stretch"
+      />
+      
       <SafeAreaView style={{ flex: 1 }}>
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.headerBg}>
-            <Image
-              source={require('../assets/images/scoorter.png')}
-              style={styles.scooterImg}
-              resizeMode="contain"
-            />
-          </View>
-
           <View style={styles.card}>
             {step === 'PHONE' && (
               <>
                 <Text style={styles.title}>
                   Enter Mobile number for verification
-                </Text>
-
-                <Text style={styles.subtitle}>
-                  This number will be used for ride-related{'\n'}
-                  communication. You will receive an SMS
-                  code for verification.
                 </Text>
 
                 <View style={styles.phoneInputContainer}>
@@ -455,10 +448,6 @@ const MobileVerificationScreen = () => {
                       visible={pickerVisible}
                       onSelect={onSelectCountry}
                       onClose={() => setPickerVisible(false)}
-                    />
-                    <Image
-                      style={styles.downArrow}
-                      source={require('../assets/icons/down_arrow.png')}
                     />
                   </TouchableOpacity>
 
@@ -492,6 +481,13 @@ const MobileVerificationScreen = () => {
                     {loading ? 'Please wait...' : 'Next'}
                   </Text>
                 </TouchableOpacity>
+
+                <Text style={styles.subtitle}>
+                  This number will be used for ride-related{'\n'}
+                  communication. You will receive an SMS {'\n'}
+                  with code for verification.
+                </Text>
+
               </>
             )}
 
@@ -542,14 +538,6 @@ const MobileVerificationScreen = () => {
         </ScrollView>
       </SafeAreaView>
 
-      <View pointerEvents="none" style={styles.absoluteBottom}>
-        <Image
-          source={require('../assets/images/bottombg.png')}
-          style={styles.bottomImage}
-          resizeMode="contain"
-        />
-      </View>
-
       <Modal visible={showOtpDialog} transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
@@ -576,44 +564,55 @@ export default MobileVerificationScreen;
 /* ================= ENHANCED STYLES WITH SIDE CURSOR ================= */
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#FFF' },
-  scrollContent: { paddingBottom: BOTTOM_IMAGE_HEIGHT + 40 },
-  headerBg: {
-    height: sh(280),
-    backgroundColor: '#FFC533',
-    borderBottomLeftRadius: s(32),
-    borderBottomRightRadius: s(32),
-    justifyContent: 'center',
-    alignItems: 'center',
+  fullBackgroundImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
+    
   },
-  scooterImg: { width: '78%', height: '78%' },
+  scrollContent: { 
+    flexGrow: 1, 
+    justifyContent: 'center', 
+    paddingHorizontal: sw(30),
+    paddingBottom: sh(120),
+  },
   card: {
-    marginHorizontal: sw(20),
-    marginTop: sh(-80),
     backgroundColor: '#FFF',
     borderRadius: s(24),
     padding: s(24),
     elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
   },
   title: {
-    fontSize: sf(20),
+    fontSize: sf(18),
     color: '#0F172A',
     marginBottom: sh(10),
     fontFamily: getFontFamily('semiBold'),
+    textAlign: 'center'
   },
   subtitle: {
-    fontSize: sf(10),
+    fontSize: sf(13),
     color: '#AEAAAA',
     marginBottom: sh(24),
     fontFamily: getFontFamily('regular'),
     lineHeight: sf(22),
+    marginTop: sh(15),
+    textAlign: 'center'
   },
   phoneInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     height: sh(50),
-    borderRadius: s(30),
+    borderRadius: s(25),
     borderWidth: 1.2,
-    borderColor: '#B4CBFF',
+    borderColor: '#DDDDDD',
     marginBottom: sh(24),
     backgroundColor: '#F8FAFC',
     paddingStart: sw(10),
@@ -624,7 +623,7 @@ const styles = StyleSheet.create({
     width: 1,
     height: sh(24),
     backgroundColor: '#D1D5DB',
-    marginHorizontal: sh(12),
+    marginHorizontal: sh(12)
   },
   codeAndInput: { flex: 1, flexDirection: 'row', alignItems: 'center' },
   callingCode: { fontSize: sf(18), color: '#0F172A' },
@@ -704,27 +703,16 @@ const styles = StyleSheet.create({
     fontFamily: getFontFamily('semiBold'),
   },
   button: {
-    height: sh(56),
+    height: sh(45),
     backgroundColor: '#0F172A',
-    borderRadius: s(14),
+    borderRadius: s(25),
     justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: sh(10),
+    alignItems: 'center'
   },
   buttonText: { 
-    fontSize: sf(18), 
+    fontSize: sf(15), 
     color: '#FFF',
     fontFamily: getFontFamily('semiBold'),
-  },
-  absoluteBottom: { 
-    position: 'absolute', 
-    bottom: 0, 
-    width: '100%',
-    height: BOTTOM_IMAGE_HEIGHT,
-  },
-  bottomImage: { 
-    width: '100%', 
-    height: '100%',
   },
   modalOverlay: {
     flex: 1,
