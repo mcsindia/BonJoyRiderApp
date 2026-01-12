@@ -156,7 +156,7 @@ const AddEmergencyContactScreen = () => {
       <ScrollView contentContainerStyle={styles.container}>
         {/* YELLOW HEADER */}
         <Image
-          source={require('../../../assets/images/emergency_contact_bg.png')}
+          source={require('../../../assets/images/profile_bg.png')}
           style={styles.headerBg}
           resizeMode="stretch"
         />
@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    height: sh(580),
+    height: sh(180),
     width: '100%',
     zIndex: -1,
   },
