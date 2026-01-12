@@ -12,6 +12,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { s, sf, sh, sw } from '../utils/scale';
+import { getFontFamily } from '../utils/fontFamily';
 
 const HomeScreen = () => {
   const navigation = useNavigation();
@@ -29,16 +30,25 @@ const HomeScreen = () => {
           <Text style={styles.menuIcon}>☰</Text>
         </TouchableOpacity>
 
+        <TouchableOpacity  style={styles.menuButton}>
+        <Image
+              source={require('../assets/images/search.png')}
+              style={styles.searchIcon}
+            />
+            </TouchableOpacity>
         <View style={styles.searchBarContainer}>
           <TextInput
             style={styles.searchInput}
-            placeholder="Search..."
+            placeholder="* My current location"
             placeholderTextColor="#9CA3AF"
           />
-          <TouchableOpacity>
-            <Text style={styles.searchIcon}>🔍</Text>
-          </TouchableOpacity>
         </View>
+        <TouchableOpacity  style={styles.menuButton}>
+        <Image
+              source={require('../assets/images/notification.png')}
+              style={styles.searchIcon}
+            />
+            </TouchableOpacity>
       </View>
 
       {/* Map Placeholder */}
@@ -93,39 +103,43 @@ const styles = StyleSheet.create({
     borderBottomColor: '#E5E7EB',
   },
   menuButton: {
-    width: sw(56),
-    height: sh(48),
-    backgroundColor: '#1F344F', // Dark blue as in screenshot
+    width: sw(40),
+    height: sh(40),
+    backgroundColor: '#FFF1B1', // Dark blue as in screenshot
     justifyContent: 'center',
     alignItems: 'center',
-    borderTopLeftRadius: s(4),
-    borderBottomLeftRadius: s(4)
+    borderRadius: s(5),
+    margin: s(4)
   },
   menuIcon: {
-    fontSize: s(24),
-    color: '#FFFFFF',
+    fontSize: s(24)
   },
   searchBarContainer: {
     flex: 1,
     flexDirection: 'row',
-    alignItems: 'center',
-    height: sh(48),
+    height: sh(40),
     borderWidth: 1,
     borderColor: '#D1D5DB',
-    borderTopRightRadius: s(4),
-    borderBottomRightRadius: s(4),
-    paddingHorizontal: sw(12),
-    backgroundColor: '#FFFFFF',
+    borderRadius: s(4),
+    paddingHorizontal: sw(5),
+    backgroundColor: '#FFFFFF'
   },
   searchInput: {
     flex: 1,
-    fontSize: sf(16),
+    fontSize: sf(13),
     color: '#6B7280',
-    paddingVertical: 0,
+    fontFamily: getFontFamily('regular'),
+    alignSelf: 'center',
+    alignContent: 'center',
+    alignItems: 'center',
+    textAlignVertical: 'bottom',
+    justifyContent:'center'
   },
   searchIcon: {
-    fontSize: sf(20),
-    color: '#1E40AF', // Matches menu button
+    width: sw(24),
+    height: sh(24),
+    backgroundColor: '#FFF1B1'
+
   },
   mapContainer: {
     height: sh(200),

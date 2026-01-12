@@ -1,22 +1,22 @@
 import React from 'react';
+import { View, Image, StyleSheet } from 'react-native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Image, StyleSheet } from 'react-native';
 
 import DrawerContent from '../screens/HomeScreenContent/DrawerContent';
 import HomeStack from './HomeStack';
 import ProfileScreen from '../screens/HomeScreenContent/profileScreenComponents/ProfileScreen';
 
 import { s, sf, sh, sw } from '../utils/scale';
-import EditProfilePage from '../screens/HomeScreenContent/profileScreenComponents/EditProfilePage';
 import TodoScreen from '../screens/HomeScreenContent/Others/TodoScreen';
 
-// tab icons
+/* -------- Tab Icons -------- */
+
 const homeIcon = require('../assets/tab-icons/home.png');
-const bikeIcon = require('../assets/tab-icons/bike.png');
-const profileIcon = require('../assets/tab-icons/account.png');
+const FavouriteIcon = require('../assets/tab-icons/heart.png');
+const profileIcon = require('../assets/tab-icons/user.png');
 const walletIcon = require('../assets/tab-icons/wallet.png');
-const supportIcon = require('../assets/tab-icons/support.png');
+const historyIcon = require('../assets/tab-icons/discount.png');
 
 const Drawer = createDrawerNavigator();
 const Tab = createBottomTabNavigator();
@@ -28,10 +28,22 @@ const BottomTabNavigator = () => {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         headerShown: false,
+
+        tabBarShowLabel: true,
+        tabBarLabelStyle: { fontSize: sf(12) },
+
+        tabBarActiveTintColor: '#F5B400',
+        tabBarInactiveTintColor: '#111',
+
         tabBarStyle: {
-          backgroundColor: '#1F344F',
-          paddingBottom: 10,
+          backgroundColor: '#FFF',
+          height: sh(70),
+          borderTopLeftRadius: s(20),
+          borderTopRightRadius: s(20),
+          elevation: 10,
+          position: 'absolute',
         },
+
         tabBarIcon: ({ focused }) => {
           let icon;
 
@@ -39,8 +51,8 @@ const BottomTabNavigator = () => {
             case 'Home':
               icon = homeIcon;
               break;
-            case 'Bike':
-              icon = bikeIcon;
+            case 'Favourite':
+              icon = FavouriteIcon;
               break;
             case 'Profile':
               icon = profileIcon;
@@ -49,7 +61,24 @@ const BottomTabNavigator = () => {
               icon = walletIcon;
               break;
             default:
-              icon = supportIcon;
+              icon = historyIcon;
+          }
+
+          /* -------- HEXAGON WALLET (WORKING) -------- */
+          if (route.name === 'Wallet') {
+            return (
+              <View style={styles.walletWrapper}>
+                <View style={styles.hexagon}>
+                  <View style={styles.hexagonBefore} />
+                  <View style={styles.hexagonAfter} />
+
+                  <Image
+                    source={icon}
+                    style={styles.walletIcon}
+                  />
+                </View>
+              </View>
+            );
           }
 
           return (
@@ -65,10 +94,10 @@ const BottomTabNavigator = () => {
       })}
     >
       <Tab.Screen name="Home" component={HomeStack} />
-      <Tab.Screen name="Bike" component={TodoScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name="Favourite" component={TodoScreen} />
       <Tab.Screen name="Wallet" component={TodoScreen} />
-      <Tab.Screen name="Support" component={TodoScreen} />
+      <Tab.Screen name="history" component={TodoScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
 };
@@ -82,21 +111,76 @@ const HomeNavigator = () => {
       drawerStyle={{ width: sw(280) }}
       drawerContent={(props) => <DrawerContent {...props} />}
     >
-      <Drawer.Screen name="HomeTabs" component={BottomTabNavigator} />
+      <Drawer.Screen
+        name="HomeTabs"
+        component={BottomTabNavigator}
+      />
     </Drawer.Navigator>
   );
 };
 
 export default HomeNavigator;
 
+/* ---------------- Styles ---------------- */
+
+const HEX_WIDTH = sw(64);
+const HEX_HEIGHT = sh(36);
+
 const styles = StyleSheet.create({
   tabIcon: {
-    width: sw(24),
-    height: sh(24),
-    resizeMode: 'contain',
-    transform: [{ scale: 1 }],
+    width: sw(25),
+    height: sh(25),
+    resizeMode: 'contain'
   },
+
   activeTabIcon: {
-    transform: [{ scale: 1.2 }],
+    tintColor: '#F5B400',
+  },
+
+  /* -------- HEXAGON -------- */
+
+  walletWrapper: {
+    marginTop: sh(-30),
+  },
+
+  hexagon: {
+    width: HEX_WIDTH,
+    height: HEX_HEIGHT,
+    backgroundColor: '#F5B400',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: sw(10)
+  },
+
+  hexagonBefore: {
+    position: 'absolute',
+    top: -HEX_HEIGHT / 2,
+    width: 0,
+    height: 0,
+    borderLeftWidth: HEX_WIDTH / 2,
+    borderRightWidth: HEX_WIDTH / 2,
+    borderBottomWidth: HEX_HEIGHT / 2,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: '#F5B400',
+  },
+
+  hexagonAfter: {
+    position: 'absolute',
+    bottom: -HEX_HEIGHT / 2,
+    width: 0,
+    height: 0,
+    borderLeftWidth: HEX_WIDTH / 2,
+    borderRightWidth: HEX_WIDTH / 2,
+    borderTopWidth: HEX_HEIGHT / 2,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderTopColor: '#F5B400',
+  },
+
+  walletIcon: {
+    width: sw(26),
+    height: sh(26),
+    tintColor: '#000'
   },
 });

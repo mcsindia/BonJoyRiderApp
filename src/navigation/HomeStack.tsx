@@ -12,6 +12,9 @@ import EmergencyContactsScreen from '../screens/HomeScreenContent/emergencyConta
 export type HomeStackParamList = {
   HomeMain: undefined;
   EmergencyContacts: undefined;
+  AddEmergencyContact: undefined;
+  EmergencyContactDetail: undefined
+
 };
 
 const Stack = createNativeStackNavigator<HomeStackParamList>();
