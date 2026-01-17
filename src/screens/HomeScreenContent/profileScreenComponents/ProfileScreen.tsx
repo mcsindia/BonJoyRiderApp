@@ -484,8 +484,8 @@ const styles = StyleSheet.create({
   },
 
   avatar: {
-    width: sw(110),
-    height: sw(110),
+    width: sw(100),
+    height: sw(100),
     borderRadius: s(55),
     borderWidth: s(3),
     borderColor: '#E0E7FF',
@@ -493,7 +493,7 @@ const styles = StyleSheet.create({
 
   row: {
     flexDirection: 'row',
-    paddingVertical: sh(12),
+    paddingVertical: sh(5),
     borderBottomWidth: s(1),
     borderBottomColor: '#F1F5F9',
   },
