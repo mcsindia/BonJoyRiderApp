@@ -42,17 +42,13 @@ const DrawerContent = ({ navigation }: any) => {
   }, []);
 
   /* =====================================================
-     NAVIGATION
+     NAVIGATION - Updated to navigate to root screens
   ====================================================== */
 
   const closeAndNavigate = (screen: string) => {
     navigation.closeDrawer();
-    navigation.navigate('HomeTabs', {
-      screen: 'Home',
-      params: {
-        screen: screen,
-      },
-    });
+    // Navigate to root stack
+    navigation.getParent()?.navigate(screen);
   };
 
   /* =====================================================
@@ -70,7 +66,8 @@ const DrawerContent = ({ navigation }: any) => {
           style: 'destructive',
           onPress: async () => {
             await logout();
-            navigation.reset({
+            // Navigate to root Splash screen
+            navigation.getParent()?.reset({
               index: 0,
               routes: [{ name: 'Splash' }],
             });
@@ -130,9 +127,10 @@ const DrawerContent = ({ navigation }: any) => {
           />
           <Text style={styles.menuText}>Home</Text>
         </TouchableOpacity>
+        
         <TouchableOpacity
           style={styles.menuItem}
-          onPress={() => closeAndNavigate('')}
+          onPress={() => closeAndNavigate('Electric')}
         >
           <Image
             source={require('../../assets/images/contact_drawer.png')}
@@ -140,9 +138,10 @@ const DrawerContent = ({ navigation }: any) => {
           />
           <Text style={styles.menuText}>Electric</Text>
         </TouchableOpacity>
+        
         <TouchableOpacity
           style={styles.menuItem}
-          onPress={() => closeAndNavigate('')}
+          onPress={() => closeAndNavigate('RideHistory')}
         >
           <Image
             source={require('../../assets/images/contact_drawer.png')}
@@ -150,9 +149,10 @@ const DrawerContent = ({ navigation }: any) => {
           />
           <Text style={styles.menuText}>Ride History</Text>
         </TouchableOpacity>
+        
         <TouchableOpacity
           style={styles.menuItem}
-          onPress={() => closeAndNavigate('')}
+          onPress={() => closeAndNavigate('BonjoyMoney')}
         >
           <Image
             source={require('../../assets/images/contact_drawer.png')}
@@ -160,9 +160,10 @@ const DrawerContent = ({ navigation }: any) => {
           />
           <Text style={styles.menuText}>Bonjoy Money</Text>
         </TouchableOpacity>
+        
         <TouchableOpacity
           style={styles.menuItem}
-          onPress={() => closeAndNavigate('')}
+          onPress={() => closeAndNavigate('Payments')}
         >
           <Image
             source={require('../../assets/images/contact_drawer.png')}
@@ -170,9 +171,10 @@ const DrawerContent = ({ navigation }: any) => {
           />
           <Text style={styles.menuText}>Payments</Text>
         </TouchableOpacity>
+        
         <TouchableOpacity
           style={styles.menuItem}
-          onPress={() => closeAndNavigate('')}
+          onPress={() => closeAndNavigate('BonjoyCoins')}
         >
           <Image
             source={require('../../assets/images/contact_drawer.png')}
@@ -180,6 +182,7 @@ const DrawerContent = ({ navigation }: any) => {
           />
           <Text style={styles.menuText}>Bonjoy Coins</Text>
         </TouchableOpacity>
+        
         <TouchableOpacity
           style={styles.menuItem}
           onPress={() => closeAndNavigate('EmergencyContacts')}
@@ -234,17 +237,18 @@ const DrawerContent = ({ navigation }: any) => {
           />
           <Text style={styles.menuText}>About</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
-        <Image
-          source={require('../../assets/images/logout_drawer.png')}
-          style={styles.icon}
-        />
-        <Text style={styles.signOutText}>Sign out</Text>
-      </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.menuItem} 
+          onPress={handleLogout}
+        >
+          <Image
+            source={require('../../assets/images/logout_drawer.png')}
+            style={styles.icon}
+          />
+          <Text style={styles.signOutText}>Sign out</Text>
+        </TouchableOpacity>
       </View>
-
-      {/* SIGN OUT */}
-     
     </SafeAreaView>
   );
 };

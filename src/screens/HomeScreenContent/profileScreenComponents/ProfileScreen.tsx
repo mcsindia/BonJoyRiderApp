@@ -189,7 +189,7 @@ const ProfileScreen = () => {
 
   // Handle back to home navigation
   const handleBackPress = () => {
-    navigation.navigate('HomeMain');
+    navigation.navigate('Home');
   };
 
   if (loading) {
@@ -311,6 +311,12 @@ const ProfileScreen = () => {
 
         <View style={{ height: sh(40) }} />
       </ScrollView>
+
+      <Image
+        source={require('../../../assets/images/bottom_bg.png')}
+        style={styles.footerImage}
+        resizeMode="stretch"
+      />
     </SafeAreaView>
   );
 };
@@ -358,6 +364,15 @@ const ProfileRow = ({ label, value, statusValue }: ProfileRowProps) => {
 /* STYLES                             */
 /* ---------------------------------- */
 const styles = StyleSheet.create({
+  footerImage: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    width: '100%',
+    height: sh(120),
+    zIndex: 10,
+  },
   safe: {
     flex: 1,
     backgroundColor: '#F8FAFC',
