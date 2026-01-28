@@ -150,6 +150,12 @@ npm test
 Common Issues & Fixes
 Metro Port Issue
 npx react-native start --reset-cache
+  # step 4 - to generate the apk
+  - then go to the android folder - cd android
+  - run the command - ./gradlew assembleRelease
+  - find your apk in path - project/android/app/build/outputs/apk/release/app-release.apk
+
+## Congratulations! :tada:
 
 Android Build Failed
 cd android
