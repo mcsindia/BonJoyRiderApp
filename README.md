@@ -76,6 +76,7 @@ When you want to forcefully reload, for example to reset the state of your app, 
   # step 4 - to generate the apk
   - then go to the android folder - cd android
   - run the command - ./gradlew assembleRelease
+  - find your apk in path - project/android/app/build/outputs/apk/release/app-release.apk
 
 ## Congratulations! :tada:
 
