@@ -277,6 +277,11 @@ const EmergencyContactsScreen = () => {
           )}
         </View>
       </ScrollView>
+      <Image
+        source={require('../../../assets/images/bottom_bg.png')}
+        style={styles.footerImage}
+        resizeMode="stretch"
+      />
     </SafeAreaView>
   );
 };
@@ -284,6 +289,15 @@ const EmergencyContactsScreen = () => {
 export default EmergencyContactsScreen;
 
 const styles = StyleSheet.create({
+  footerImage: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    width: '100%',
+    height: sh(120),
+    zIndex: 10,
+  },
   safe: {
     flex: 1,
     backgroundColor: '#F8FAFC',

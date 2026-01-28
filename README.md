@@ -1,78 +1,155 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+BonJoy Rider App
 
-# Getting Started
+BonJoy Rider is a React Native mobile application built for riders as part of the BonJoy platform.
+This repository contains the complete source code along with setup and build instructions.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+Tech Stack
 
-## Step 1: Start Metro
+React Native 0.82.1
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+React 19.1.1
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+TypeScript
 
-```sh
-# Using npm
+Android (Kotlin)
+
+Navigation: React Navigation
+
+State & Storage: Async Storage
+
+Networking: Axios
+
+Prerequisites
+
+Ensure the following are installed on your system:
+
+1. Node.js
+
+Version: >= 20
+
+node -v
+
+2. npm
+npm -v
+
+3. Java Development Kit (JDK)
+
+Recommended: JDK 17
+
+java -version
+
+4. Android Studio
+
+Install Android SDK
+
+Install Android SDK Platform Tools
+
+Install Android Emulator or connect a physical device
+
+5. React Native CLI
+npm install -g react-native-cli
+
+Project Setup
+1. Clone the Repository
+git clone https://github.com/mcsindia/BonJoyDriverApp.git
+cd bonjoyrider
+
+2. Install Dependencies
+npm install
+
+3. iOS Setup (macOS only)
+cd ios
+pod install
+cd ..
+
+Running the Application
+Start Metro Bundler
 npm start
 
-# OR using Yarn
-yarn start
-```
 
-## Step 2: Build and run your app
+Keep this terminal running.
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+Run on Android
 
-### Android
+Make sure an emulator or device is connected.
 
-```sh
-# Using npm
 npm run android
 
-# OR using Yarn
-yarn android
-```
-
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
+Run on iOS
 npm run ios
 
-# OR using Yarn
-yarn ios
-```
+Environment Configuration (Optional)
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+If you are using APIs or environment variables:
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+Create a file:
 
-## Step 3: Modify your app
+.env
 
-Now that you have successfully run the app, let's make changes!
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+Example:
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+BASE_URL=https://api.example.com
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+Android Build & APK Generation
+1. Debug APK (For Testing)
+cd android
+./gradlew assembleDebug
 
+
+APK location:
+
+android/app/build/outputs/apk/debug/app-debug.apk
+
+2. Release APK (For Distribution)
+Step 1: Generate Keystore
+keytool -genkeypair -v \
+-keystore my-release-key.keystore \
+-alias my-key-alias \
+-keyalg RSA -keysize 2048 -validity 10000
+
+
+Place the keystore inside:
+
+android/app/
+
+Step 2: Configure gradle.properties
+
+Add:
+
+MYAPP_RELEASE_STORE_FILE=my-release-key.keystore
+MYAPP_RELEASE_KEY_ALIAS=my-key-alias
+MYAPP_RELEASE_STORE_PASSWORD=*****
+MYAPP_RELEASE_KEY_PASSWORD=*****
+
+Step 3: Generate Release APK
+cd android
+./gradlew assembleRelease
+
+
+APK location:
+
+android/app/build/outputs/apk/release/app-release.apk
+
+Android App Bundle (AAB) – Play Store
+cd android
+./gradlew bundleRelease
+
+
+AAB location:
+
+android/app/build/outputs/bundle/release/app-release.aab
+
+Linting & Testing
+Run ESLint
+npm run lint
+
+Run Tests
+npm test
+
+Common Issues & Fixes
+Metro Port Issue
+npx react-native start --reset-cache
   # step 4 - to generate the apk
   - then go to the android folder - cd android
   - run the command - ./gradlew assembleRelease
@@ -80,23 +157,33 @@ When you want to forcefully reload, for example to reset the state of your app, 
 
 ## Congratulations! :tada:
 
-You've successfully run and modified your React Native App. :partying_face:
+Android Build Failed
+cd android
+./gradlew clean
 
-### Now what?
+Project Structure (High Level)
+bonjoyrider/
+├── android/
+├── ios/
+├── src/
+│   ├── screens/
+│   ├── navigation/
+│   ├── services/
+│   └── utils/
+├── App.tsx
+├── package.json
+└── README.md
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
+Contribution Guidelines
 
-# Troubleshooting
+Follow consistent code formatting
 
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+Use meaningful commit messages
 
-# Learn More
+Create feature branches for new changes
 
-To learn more about React Native, take a look at the following resources:
+Contact
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+Sanjeev Kumar
+Software Engineer
+📧 sanjeevkumar.iitp@gmail.com
